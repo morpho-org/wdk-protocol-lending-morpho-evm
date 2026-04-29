@@ -136,6 +136,7 @@ describe('MorphoProtocolEvm', () => {
     })
     account.getAddress = jest.fn().mockResolvedValue(ADDRESS)
     protocol = new MorphoProtocolEvm(account, {
+      chainId: 1,
       earnVaultAddress: VAULT,
       borrowMarketParams: MARKET_PARAMS
     })
@@ -168,8 +169,71 @@ describe('MorphoProtocolEvm', () => {
       expect(supplyAction.getRequirements).toHaveBeenCalledWith(requirementOptions)
     })
 
+    test('should use vaultV2 when an explicit vault is configured', async () => {
+      const protocol = new MorphoProtocolEvm(account, {
+        chainId: 1,
+        earnVaultAddress: VAULT,
+        borrowMarketParams: MARKET_PARAMS
+      })
+
+      account.getTokenBalance = jest.fn().mockResolvedValue(100_000n)
+      account.sendTransaction = jest.fn().mockResolvedValue({ hash: 'dummy-supply-hash', fee: 12_345n })
+
+      await protocol.supply({ token: TOKEN, amount: 100_000n })
+
+      expect(vaultV2Mock).toHaveBeenCalledWith(VAULT, 1)
+    })
+
+    test('should copy options instead of keeping the caller reference', async () => {
+      const options = {
+        chainId: 1,
+        earnVaultAddress: VAULT,
+        borrowMarketParams: { ...MARKET_PARAMS }
+      }
+      const protocol = new MorphoProtocolEvm(account, options)
+      options.earnVaultAddress = '0x0000000000000000000000000000000000000001'
+      options.borrowMarketParams.loanToken = COLLATERAL
+
+      account.getTokenBalance = jest.fn().mockResolvedValue(100_000n)
+      account.sendTransaction = jest.fn().mockResolvedValue({ hash: 'dummy-supply-hash', fee: 12_345n })
+
+      await protocol.supply({ token: TOKEN, amount: 100_000n })
+
+      expect(vaultV2Mock).toHaveBeenCalledWith(VAULT, 1)
+      expect(vaultV2Entity.deposit).toHaveBeenCalledWith(expect.objectContaining({
+        amount: 100_000n
+      }))
+    })
+
+    test('should build a native-only vault deposit', async () => {
+      vaultV2Entity.getData.mockResolvedValueOnce({
+        ...vaultData,
+        asset: COLLATERAL
+      })
+
+      account.getTokenBalance = jest.fn()
+      account.sendTransaction = jest.fn().mockResolvedValue({ hash: 'dummy-supply-hash', fee: 12_345n })
+
+      await protocol.supply({ token: COLLATERAL, nativeAmount: 100_000n })
+
+      expect(account.getTokenBalance).not.toHaveBeenCalled()
+      expect(vaultV2Entity.deposit).toHaveBeenCalledWith({
+        amount: 0n,
+        nativeAmount: 100_000n,
+        userAddress: ADDRESS,
+        accrualVault: expect.objectContaining({ asset: COLLATERAL }),
+        slippageTolerance: undefined
+      })
+    })
+
+    test('should reject zero deposit amount across erc20 and native sources', async () => {
+      await expect(protocol.supply({ token: TOKEN, amount: 0n }))
+        .rejects.toThrow("'amount' or 'nativeAmount' should be greater than zero.")
+    })
+
     test('should use vaultV2 when the selected preset is configured', async () => {
       const protocol = new MorphoProtocolEvm(account, {
+        chainId: 1,
         presets: { earn: 'sky-money-usdt-savings' },
         borrowMarketParams: MARKET_PARAMS
       })
@@ -184,6 +248,7 @@ describe('MorphoProtocolEvm', () => {
 
     test('should reject Morpho Vault V1 configuration', () => {
       expect(() => new MorphoProtocolEvm(account, {
+        chainId: 1,
         earnVaultAddress: VAULT,
         earnVaultVersion: 'v1',
         borrowMarketParams: MARKET_PARAMS
@@ -193,12 +258,13 @@ describe('MorphoProtocolEvm', () => {
     test('should reject earn presets on the wrong chain', async () => {
       mockGetNetwork.mockResolvedValue({ chainId: 8453n })
       const protocol = new MorphoProtocolEvm(account, {
+        chainId: 1,
         presets: { earn: 'sky-money-usdt-savings' },
         borrowMarketParams: MARKET_PARAMS
       })
 
       await expect(protocol.getVaultPosition())
-        .rejects.toThrow('Morpho earn preset is configured for chain 1, but the connected provider is on chain 8453.')
+        .rejects.toThrow('Morpho target is configured for chain 1, but the connected provider is on chain 8453.')
     })
 
     test("should throw if 'token' is invalid", async () => {
@@ -206,9 +272,16 @@ describe('MorphoProtocolEvm', () => {
         .rejects.toThrow("'token' must be a valid address.")
     })
 
-    test("should throw if 'amount' is less than or equal to zero", async () => {
+    test("should throw if 'amount' and 'nativeAmount' are zero", async () => {
       await expect(protocol.supply({ token: TOKEN, amount: 0n }))
-        .rejects.toThrow("'amount' should be greater than zero.")
+        .rejects.toThrow("'amount' or 'nativeAmount' should be greater than zero.")
+    })
+
+    test('should require chainId with explicit Morpho targets', () => {
+      expect(() => new MorphoProtocolEvm(account, {
+        earnVaultAddress: VAULT,
+        borrowMarketParams: MARKET_PARAMS
+      })).toThrow("'chainId' must be configured when using explicit Morpho targets.")
     })
   })
 
@@ -270,6 +343,7 @@ describe('MorphoProtocolEvm', () => {
 
     test('should fetch market params when only borrowMarketId is configured', async () => {
       const protocol = new MorphoProtocolEvm(account, {
+        chainId: 1,
         earnVaultAddress: VAULT,
         borrowMarketId: MARKET_ID
       })
@@ -287,12 +361,13 @@ describe('MorphoProtocolEvm', () => {
     test('should reject borrow presets on the wrong chain', async () => {
       mockGetNetwork.mockResolvedValue({ chainId: 8453n })
       const protocol = new MorphoProtocolEvm(account, {
+        chainId: 1,
         earnVaultAddress: VAULT,
         presets: { borrow: 'wsteth' }
       })
 
       await expect(protocol.borrow({ token: TOKEN, amount: 100_000n }))
-        .rejects.toThrow('Morpho borrow preset is configured for chain 1, but the connected provider is on chain 8453.')
+        .rejects.toThrow('Morpho target is configured for chain 1, but the connected provider is on chain 8453.')
       expect(fetchMarketMock).not.toHaveBeenCalled()
     })
 
@@ -368,6 +443,20 @@ describe('MorphoProtocolEvm', () => {
       expect(result).toEqual({ hash: 'dummy-collateral-hash', fee: 12_345n })
     })
 
+    test('should build a native-only supply collateral transaction', async () => {
+      account.getTokenBalance = jest.fn()
+      account.sendTransaction = jest.fn().mockResolvedValue({ hash: 'dummy-collateral-hash', fee: 12_345n })
+
+      await protocol.supplyCollateral({ token: COLLATERAL, nativeAmount: 100_000n })
+
+      expect(account.getTokenBalance).not.toHaveBeenCalled()
+      expect(marketEntity.supplyCollateral).toHaveBeenCalledWith({
+        amount: 0n,
+        nativeAmount: 100_000n,
+        userAddress: ADDRESS
+      })
+    })
+
     test('should build a withdraw collateral transaction with morpho-sdk', async () => {
       account.sendTransaction = jest.fn().mockResolvedValue({ hash: 'dummy-withdraw-collateral-hash', fee: 12_345n })
 
@@ -402,6 +491,7 @@ describe('MorphoProtocolEvm', () => {
       account.sendTransaction = jest.fn().mockResolvedValue({ hash: 'dummy-user-operation-hash', fee: 12_345n })
 
       const protocol = new MorphoProtocolEvm(account, {
+        chainId: 1,
         earnVaultAddress: VAULT,
         borrowMarketParams: MARKET_PARAMS
       })
@@ -442,6 +532,17 @@ describe('MorphoProtocolEvm', () => {
         marketId: new MarketParams(MARKET_PARAMS).id
       })
     })
+
+    test('should invalidate chain-bound caches when the provider chain changes', async () => {
+      await protocol.getMarketPosition()
+      expect(marketV1Mock).toHaveBeenCalledWith(expect.any(Object), 1)
+
+      mockGetNetwork.mockResolvedValue({ chainId: 8453n })
+
+      await expect(protocol.getMarketPosition())
+        .rejects.toThrow('Morpho target is configured for chain 1, but the connected provider is on chain 8453.')
+      expect(marketV1Mock).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('read-only accounts', () => {
@@ -450,6 +551,7 @@ describe('MorphoProtocolEvm', () => {
         provider: 'https://dummy-rpc-url.com'
       })
       const protocol = new MorphoProtocolEvm(account, {
+        chainId: 1,
         earnVaultAddress: VAULT,
         borrowMarketParams: MARKET_PARAMS
       })

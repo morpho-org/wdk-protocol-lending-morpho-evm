@@ -308,3 +308,51 @@ It should not be considered fully release-ready until:
 - Public types match runtime behavior.
 - Requirement signature flows are clearly documented and configurable.
 - At least one non-mocked SDK smoke test exists.
+
+## Foulques Review Response
+
+Date: 2026-04-29
+
+### 1. Requirement methods return `Promise<any[]>`
+
+Foulques found that generated declaration files exposed broad `Promise<any[]>` return types for `get*Requirements()` methods.
+
+Answer: implement. Requirements now use exported SDK-backed aliases:
+
+- `RequirementApproval` for ERC-20 approval transactions.
+- `RequirementAuthorization` for Morpho `setAuthorization` transactions.
+- `RequirementSignatureRequest` for signable permit/permit2 requests.
+
+The important distinction is that `RequirementSignature` is the signed output passed later to `buildTx()` through `supply`, `repay`, or `supplyCollateral`; it is not itself the raw return type of `getRequirements()`.
+
+### 2. `_options` is stored by reference
+
+Foulques found that mutating the constructor options object after initialization could alter adapter behavior.
+
+Answer: implement. The constructor now normalizes, copies, and freezes the internal option object, including nested `presets` and `borrowMarketParams`. The caller-owned object is not frozen directly, because mutating user-owned input as a side effect would be surprising.
+
+### 3. `nativeAmount` is unreachable
+
+Foulques found that native-only supply paths were impossible because the adapter always normalized `amount` and checked ERC-20 balance before calling the SDK.
+
+Answer: implement. Vault deposit and collateral supply now accept SDK-compatible deposit amount semantics: `amount`, `nativeAmount`, or both. ERC-20 balance checks only run when `amount > 0`. The adapter still validates `token` because it must match the configured vault asset or market collateral token.
+
+### 4. E2E test on fork
+
+Foulques asked whether an end-to-end transaction test can run on a fork.
+
+Answer: implement as opt-in. `npm run test:fork` starts Anvil with `MAINNET_RPC_URL`, impersonates a USDT holder, funds the local test wallet, sends returned SDK requirements, and executes a real Morpho Vault V2 deposit against forked mainnet state. The default unit test suite remains mocked and deterministic.
+
+### 5. Chain and market caches never invalidated on wallet switch
+
+Foulques flagged `_chainId`, `_marketParams`, and `_viemClient` persistence across browser-wallet chain switches.
+
+Answer: implement. `_getChainId()` now re-reads the provider chain and invalidates `_viemClient`, `_morphoClient`, and `_marketParams` when the connected chain changes. `_getViemClient()` and `_getMarketParams()` check chain state before reusing caches.
+
+Explicit configs now require `chainId`; presets already carry one. This gives explicit `earnVaultAddress`, `borrowMarketId`, and `borrowMarketParams` flows the same pre-build chain guard as preset flows.
+
+### 6. Borrow requirements and `setAuthorization`
+
+Foulques noted that Bundler3 borrow flows need to know whether the user has authorized GeneralAdapter1 through Morpho `setAuthorization`.
+
+Answer: already covered by the SDK-backed flow. `getBorrowRequirements()` returns the SDK's Morpho authorization transaction when GeneralAdapter1 is not authorized. The implementation keeps this delegated to `@morpho-org/morpho-sdk` rather than duplicating authorization checks in the WDK adapter.

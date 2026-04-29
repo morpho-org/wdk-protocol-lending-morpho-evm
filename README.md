@@ -62,6 +62,7 @@ new MorphoProtocolEvm(account, options)
 
 Options:
 
+- `chainId` (number | bigint): required when using explicit Morpho targets; guards transaction building against wallet chain switches.
 - `earnVaultAddress` (string): explicit Morpho vault address.
 - `earnVaultVersion` (`'v2'`): vault type for `earnVaultAddress`; defaults to `'v2'`. Morpho Vault V1 is intentionally not supported by this module.
 - `borrowMarketParams` (object): explicit Morpho Blue market params.
@@ -70,6 +71,10 @@ Options:
 - `slippageTolerance` (bigint): passed through to `@morpho-org/morpho-sdk`.
 - `supportSignature` (boolean): enable SDK permit/permit2 requirements.
 - `supportDeployless` (boolean): enable SDK deployless reads.
+
+Built-in presets already carry their expected chain id. If you use `earnVaultAddress`, `borrowMarketParams`, or `borrowMarketId` directly, pass `chainId` so the adapter can fail before building transactions after a browser-wallet chain switch.
+
+For vault deposits and collateral supply, pass either `amount`, `nativeAmount`, or both. `nativeAmount` follows Morpho SDK semantics and is only valid when the configured vault asset or collateral token is the wrapped native token for the chain.
 
 ## Methods
 
@@ -121,4 +126,20 @@ Morpho SDK actions can require approvals, permit/permit2 signatures, or Morpho a
 
 For ERC-4337 accounts you can choose to batch the returned requirement transactions with the final transaction using your account-level flow. For EOA accounts, send requirements before the final operation.
 
+Requirement entries are one of:
+
+- Approval transaction: send the returned transaction before the final action.
+- Morpho authorization transaction: send the returned `setAuthorization` transaction before borrow flows that require GeneralAdapter1 authorization.
+- Signature request: call the returned requirement's `sign(client, userAddress)` method, then pass the resulting `requirementSignature` to `supply`, `repay`, or `supplyCollateral`.
+
 Morpho SDK enforces a builder/executor invariant for bundled actions. For that reason, `onBehalfOf` and vault/collateral withdrawal `to` must equal the connected wallet address in this WDK adapter.
+
+## Fork E2E Test
+
+The regular test suite is fully mocked. To execute a real vault deposit path on an Anvil mainnet fork:
+
+```bash
+MAINNET_RPC_URL="https://eth-mainnet.g.alchemy.com/v2/<key>" npm run test:fork -- --runInBand
+```
+
+The fork test impersonates a USDT holder, funds the local test wallet, sends SDK requirements, and executes a Morpho Vault V2 deposit against forked mainnet state.
