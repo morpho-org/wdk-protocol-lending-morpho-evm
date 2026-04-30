@@ -38,38 +38,27 @@ export default class MorphoProtocolEvm extends LendingProtocol {
      * `getSupplyRequirements(options)` first if the account has not approved the
      * required Morpho bundler spender.
      *
-     * @param {SupplyOptions & { nativeAmount?: bigint, requirementSignature?: RequirementSignature, slippageTolerance?: bigint }} options - The supply options.
+     * @param {MorphoSupplyOptions} options - The supply options.
      * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
      * @returns {Promise<SupplyResult>} The supply result.
      */
-    supply(options: SupplyOptions & {
-        nativeAmount?: bigint;
-        requirementSignature?: RequirementSignature;
-        slippageTolerance?: bigint;
-    }, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<SupplyResult>;
+    supply(options: MorphoSupplyOptions, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<SupplyResult>;
     /**
      * Returns Morpho SDK requirements for a vault deposit.
      *
-     * @param {SupplyOptions & { nativeAmount?: bigint, slippageTolerance?: bigint }} options - The supply options.
-     * @param {Object} [requirementOptions] - Optional Morpho SDK requirement options.
-     * @returns {Promise<Array>} Approval/signature requirements.
+     * @param {MorphoSupplyOptions} options - The supply options.
+     * @param {RequirementOptions} [requirementOptions] - Optional Morpho SDK requirement options.
+     * @returns {Promise<ApprovalOrSignatureRequirement[]>} Approval/signature requirements.
      */
-    getSupplyRequirements(options: SupplyOptions & {
-        nativeAmount?: bigint;
-        slippageTolerance?: bigint;
-    }, requirementOptions?: any): Promise<any[]>;
+    getSupplyRequirements(options: MorphoSupplyOptions, requirementOptions?: RequirementOptions): Promise<ApprovalOrSignatureRequirement[]>;
     /**
      * Quotes the cost of a vault deposit transaction.
      *
-     * @param {SupplyOptions & { nativeAmount?: bigint, requirementSignature?: RequirementSignature, slippageTolerance?: bigint }} options - The supply options.
+     * @param {MorphoSupplyOptions} options - The supply options.
      * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
      * @returns {Promise<Omit<SupplyResult, 'hash'>>} The fee quote.
      */
-    quoteSupply(options: SupplyOptions & {
-        nativeAmount?: bigint;
-        requirementSignature?: RequirementSignature;
-        slippageTolerance?: bigint;
-    }, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<Omit<SupplyResult, "hash">>;
+    quoteSupply(options: MorphoSupplyOptions, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<Omit<SupplyResult, "hash">>;
     /** @private */
     private _getSupplyAction;
     /** @private */
@@ -110,12 +99,12 @@ export default class MorphoProtocolEvm extends LendingProtocol {
      * Returns Morpho SDK requirements for a borrow.
      *
      * @param {BorrowOptions & { reallocations?: readonly VaultReallocation[], slippageTolerance?: bigint }} options - The borrow options.
-     * @returns {Promise<Array>} Authorization requirements.
+     * @returns {Promise<RequirementAuthorization[]>} Authorization requirements.
      */
     getBorrowRequirements(options: BorrowOptions & {
         reallocations?: readonly VaultReallocation[];
         slippageTolerance?: bigint;
-    }): Promise<any[]>;
+    }): Promise<RequirementAuthorization[]>;
     /**
      * Quotes the cost of a borrow transaction.
      *
@@ -136,38 +125,27 @@ export default class MorphoProtocolEvm extends LendingProtocol {
      *
      * Pass `amount: 'max'` to repay all current borrow shares.
      *
-     * @param {RepayOptions & { amount: bigint | 'max', requirementSignature?: RequirementSignature, slippageTolerance?: bigint }} options - The repay options.
+     * @param {MorphoRepayOptions} options - The repay options.
      * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
      * @returns {Promise<RepayResult>} The repay result.
      */
-    repay(options: RepayOptions & {
-        amount: bigint | "max";
-        requirementSignature?: RequirementSignature;
-        slippageTolerance?: bigint;
-    }, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<RepayResult>;
+    repay(options: MorphoRepayOptions, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<RepayResult>;
     /**
      * Returns Morpho SDK requirements for a repay.
      *
-     * @param {RepayOptions & { amount: bigint | 'max', slippageTolerance?: bigint }} options - The repay options.
-     * @param {Object} [requirementOptions] - Optional Morpho SDK requirement options.
-     * @returns {Promise<Array>} Approval/signature requirements.
+     * @param {MorphoRepayOptions} options - The repay options.
+     * @param {RequirementOptions} [requirementOptions] - Optional Morpho SDK requirement options.
+     * @returns {Promise<ApprovalOrSignatureRequirement[]>} Approval/signature requirements.
      */
-    getRepayRequirements(options: RepayOptions & {
-        amount: bigint | "max";
-        slippageTolerance?: bigint;
-    }, requirementOptions?: any): Promise<any[]>;
+    getRepayRequirements(options: MorphoRepayOptions, requirementOptions?: RequirementOptions): Promise<ApprovalOrSignatureRequirement[]>;
     /**
      * Quotes the cost of a repay transaction.
      *
-     * @param {RepayOptions & { amount: bigint | 'max', requirementSignature?: RequirementSignature, slippageTolerance?: bigint }} options - The repay options.
+     * @param {MorphoRepayOptions} options - The repay options.
      * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
      * @returns {Promise<Omit<RepayResult, 'hash'>>} The fee quote.
      */
-    quoteRepay(options: RepayOptions & {
-        amount: bigint | "max";
-        requirementSignature?: RequirementSignature;
-        slippageTolerance?: bigint;
-    }, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<Omit<RepayResult, "hash">>;
+    quoteRepay(options: MorphoRepayOptions, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<Omit<RepayResult, "hash">>;
     /** @private */
     private _getRepayAction;
     /** @private */
@@ -175,35 +153,27 @@ export default class MorphoProtocolEvm extends LendingProtocol {
     /**
      * Supplies collateral to the configured Morpho Blue market.
      *
-     * @param {SupplyOptions & { nativeAmount?: bigint, requirementSignature?: RequirementSignature }} options - The collateral supply options.
+     * @param {MorphoSupplyOptions} options - The collateral supply options.
      * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
      * @returns {Promise<SupplyResult>} The supply collateral result.
      */
-    supplyCollateral(options: SupplyOptions & {
-        nativeAmount?: bigint;
-        requirementSignature?: RequirementSignature;
-    }, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<SupplyResult>;
+    supplyCollateral(options: MorphoSupplyOptions, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<SupplyResult>;
     /**
      * Returns Morpho SDK requirements for supplying collateral.
      *
-     * @param {SupplyOptions & { nativeAmount?: bigint }} options - The collateral supply options.
-     * @param {Object} [requirementOptions] - Optional Morpho SDK requirement options.
-     * @returns {Promise<Array>} Approval/signature requirements.
+     * @param {MorphoSupplyOptions} options - The collateral supply options.
+     * @param {RequirementOptions} [requirementOptions] - Optional Morpho SDK requirement options.
+     * @returns {Promise<ApprovalOrSignatureRequirement[]>} Approval/signature requirements.
      */
-    getSupplyCollateralRequirements(options: SupplyOptions & {
-        nativeAmount?: bigint;
-    }, requirementOptions?: any): Promise<any[]>;
+    getSupplyCollateralRequirements(options: MorphoSupplyOptions, requirementOptions?: RequirementOptions): Promise<ApprovalOrSignatureRequirement[]>;
     /**
      * Quotes the cost of supplying collateral.
      *
-     * @param {SupplyOptions & { nativeAmount?: bigint, requirementSignature?: RequirementSignature }} options - The collateral supply options.
+     * @param {MorphoSupplyOptions} options - The collateral supply options.
      * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
      * @returns {Promise<Omit<SupplyResult, 'hash'>>} The fee quote.
      */
-    quoteSupplyCollateral(options: SupplyOptions & {
-        nativeAmount?: bigint;
-        requirementSignature?: RequirementSignature;
-    }, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<Omit<SupplyResult, "hash">>;
+    quoteSupplyCollateral(options: MorphoSupplyOptions, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<Omit<SupplyResult, "hash">>;
     /** @private */
     private _getSupplyCollateralAction;
     /** @private */
@@ -305,8 +275,31 @@ export type RepayOptions = import("@tetherto/wdk-wallet/protocols").RepayOptions
 export type RepayResult = import("@tetherto/wdk-wallet/protocols").RepayResult;
 export type WalletAccountReadOnlyEvm = import("@tetherto/wdk-wallet-evm").WalletAccountReadOnlyEvm;
 export type EvmErc4337WalletConfig = import("@tetherto/wdk-wallet-evm-erc-4337").EvmErc4337WalletConfig;
+export type RequirementApproval = Readonly<import("@morpho-org/morpho-sdk").Transaction<import("@morpho-org/morpho-sdk").ERC20ApprovalAction>>;
+export type RequirementAuthorization = Readonly<import("@morpho-org/morpho-sdk").Transaction<import("@morpho-org/morpho-sdk").MorphoAuthorizationAction>>;
+export type RequirementSignatureRequest = import("@morpho-org/morpho-sdk").Requirement;
 export type RequirementSignature = import("@morpho-org/morpho-sdk").RequirementSignature;
 export type VaultReallocation = import("@morpho-org/morpho-sdk").VaultReallocation;
+export type RequirementOptions = {
+    useSimplePermit?: boolean;
+};
+export type ApprovalOrSignatureRequirement = RequirementApproval | RequirementSignatureRequest;
+export type MorphoSupplyOptions = (Omit<SupplyOptions, "amount"> & {
+    amount: number | bigint;
+    nativeAmount?: number | bigint;
+    requirementSignature?: RequirementSignature;
+    slippageTolerance?: bigint;
+}) | (Omit<SupplyOptions, "amount"> & {
+    amount?: number | bigint;
+    nativeAmount: number | bigint;
+    requirementSignature?: RequirementSignature;
+    slippageTolerance?: bigint;
+});
+export type MorphoRepayOptions = Omit<RepayOptions, "amount"> & {
+    amount: number | bigint | "max";
+    requirementSignature?: RequirementSignature;
+    slippageTolerance?: bigint;
+};
 export type VaultPosition = {
     /**
      * - The account's vault share balance.
@@ -320,10 +313,6 @@ export type VaultPosition = {
      * - The configured vault address.
      */
     vaultAddress: string;
-    /**
-     * - The configured vault version.
-     */
-    vaultVersion: "v2";
 };
 export type MarketPosition = {
     /**
@@ -377,10 +366,6 @@ export type AccountData = {
      */
     vaultAddress: string;
     /**
-     * - The configured vault version.
-     */
-    vaultVersion: "v2";
-    /**
      * - The configured market id.
      */
     marketId: string;
@@ -390,10 +375,6 @@ export type MorphoProtocolOptions = {
      * - Explicit Morpho vault address. Takes priority over `presets.earn`.
      */
     earnVaultAddress?: string;
-    /**
-     * - Vault version for `earnVaultAddress`. Morpho Vault V1 is not supported.
-     */
-    earnVaultVersion?: "v2";
     /**
      * - Explicit market id. If `borrowMarketParams` is not provided, params are fetched on-chain.
      */
@@ -409,6 +390,10 @@ export type MorphoProtocolOptions = {
         earn?: string;
         borrow?: string;
     };
+    /**
+     * - Required when explicit Morpho targets are used; guards against wallet chain switches.
+     */
+    chainId?: number | bigint;
     /**
      * - Optional Morpho SDK slippage tolerance in WAD precision.
      */
