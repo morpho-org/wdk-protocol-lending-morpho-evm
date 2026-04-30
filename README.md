@@ -1,4 +1,4 @@
-# @tetherto/wdk-protocol-lending-morpho-evm
+# wdk-protocol-lending-morpho-evm
 
 Note: This package is in beta. Please test in a dev setup first.
 
