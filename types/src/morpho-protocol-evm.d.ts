@@ -384,7 +384,7 @@ export type MorphoProtocolOptions = {
      */
     earnVaultAddress?: string;
     /**
-     * - Vault version for `earnVaultAddress`. Morpho Vault V1 is not supported.
+     * - Optional V2-only compatibility field for `earnVaultAddress`. Omit it to use Morpho Vault V2.
      */
     earnVaultVersion?: "v2";
     /**

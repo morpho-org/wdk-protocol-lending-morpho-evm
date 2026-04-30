@@ -97,7 +97,7 @@ import { MORPHO_MARKET_PRESETS, MORPHO_VAULT_PRESETS } from './morpho-presets.js
 /**
  * @typedef {Object} MorphoProtocolOptions
  * @property {string} [earnVaultAddress] - Explicit Morpho vault address. Takes priority over `presets.earn`.
- * @property {'v2'} [earnVaultVersion='v2'] - Vault version for `earnVaultAddress`. Morpho Vault V1 is not supported.
+ * @property {'v2'} [earnVaultVersion='v2'] - Optional V2-only compatibility field for `earnVaultAddress`. Omit it to use Morpho Vault V2.
  * @property {string} [borrowMarketId] - Explicit market id. If `borrowMarketParams` is not provided, params are fetched on-chain.
  * @property {Object} [borrowMarketParams] - Explicit Morpho Blue market params. Takes priority over `borrowMarketId` and `presets.borrow`.
  * @property {{ earn?: string, borrow?: string }} [presets] - Curated target names for Ethereum USDT earn/borrow.

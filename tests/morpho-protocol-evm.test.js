@@ -184,6 +184,19 @@ describe('MorphoProtocolEvm', () => {
       expect(vaultV2Mock).toHaveBeenCalledWith(VAULT, 1)
     })
 
+    test('should default explicit vault configuration to Morpho Vault V2', async () => {
+      const protocol = new MorphoProtocolEvm(account, {
+        chainId: 1,
+        earnVaultAddress: VAULT,
+        borrowMarketParams: MARKET_PARAMS
+      })
+
+      const result = await protocol.getVaultPosition()
+
+      expect(vaultV2Mock).toHaveBeenCalledWith(VAULT, 1)
+      expect(result.vaultVersion).toBe('v2')
+    })
+
     test('should copy options instead of keeping the caller reference', async () => {
       const options = {
         chainId: 1,
