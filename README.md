@@ -64,7 +64,6 @@ Options:
 
 - `chainId` (number | bigint): required when using explicit Morpho targets; guards transaction building against wallet chain switches.
 - `earnVaultAddress` (string): explicit Morpho vault address.
-- `earnVaultVersion` (`'v2'`): optional V2-only compatibility field for `earnVaultAddress`; omit it to use Morpho Vault V2. Morpho Vault V1 is intentionally not supported by this module.
 - `borrowMarketParams` (object): explicit Morpho Blue market params.
 - `borrowMarketId` (string): explicit market id; market params are fetched on-chain.
 - `presets` (object): `{ earn?: string, borrow?: string }`.
@@ -109,7 +108,7 @@ Earn presets target Ethereum mainnet USDT vaults:
 | `sky-money-usdt-savings` | sky.money USDT Savings V2 |
 | `steakhouse-prime-instant` | Steakhouse Prime Instant V2 |
 
-Use Morpho Vault V2 only. Omitting `earnVaultVersion` defaults to V2, passing `earnVaultVersion: 'v1'` is rejected, and `npm run check:vault-v2` verifies that built-in earn presets, docs, and tests do not reintroduce Morpho Vault V1 usage.
+This module only builds Morpho Vault V2 earn flows. `npm run check:vault-v2` verifies that code, docs, and tests do not reintroduce Morpho Vault V1 usage or an earn-flow selector.
 
 Borrow presets target Ethereum mainnet USDT loan markets:
 

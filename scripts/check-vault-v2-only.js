@@ -17,8 +17,6 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { MORPHO_VAULT_PRESETS } from '../src/morpho-presets.js'
-
 const root = fileURLToPath(new URL('..', import.meta.url))
 
 const checks = [
@@ -26,13 +24,23 @@ const checks = [
     file: 'src/morpho-protocol-evm.js',
     patterns: [
       'client.vaultV1(',
-      "|| 'v1'"
+      "|| 'v1'",
+      'earnVaultVersion',
+      'vaultVersion'
     ]
   },
   {
     file: 'tests/morpho-protocol-evm.test.js',
     patterns: [
-      'vaultV1'
+      'vaultV1',
+      'earnVaultVersion',
+      'vaultVersion'
+    ]
+  },
+  {
+    file: 'src/morpho-presets.js',
+    patterns: [
+      'version:'
     ]
   },
   {
@@ -40,23 +48,20 @@ const checks = [
     patterns: [
       'V1/V2',
       'Steakhouse USDT V1',
-      'Gauntlet USDT Frontier V1'
+      'Gauntlet USDT Frontier V1',
+      'earnVaultVersion',
+      'vaultVersion',
+      'vault version'
     ]
   }
 ]
-
-for (const [name, preset] of Object.entries(MORPHO_VAULT_PRESETS)) {
-  if (preset.version !== 'v2') {
-    throw new Error(`Morpho earn preset '${name}' must use vault version 'v2'.`)
-  }
-}
 
 for (const check of checks) {
   const content = await readFile(join(root, check.file), 'utf8')
   const pattern = check.patterns.find((pattern) => content.includes(pattern))
 
   if (pattern) {
-    throw new Error(`${check.file} contains Morpho Vault V1 reference '${pattern}'. Use Morpho Vault V2 only.`)
+    throw new Error(`${check.file} contains unsupported Morpho vault reference '${pattern}'. Use Morpho Vault V2 only.`)
   }
 }
 

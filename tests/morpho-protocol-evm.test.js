@@ -191,10 +191,9 @@ describe('MorphoProtocolEvm', () => {
         borrowMarketParams: MARKET_PARAMS
       })
 
-      const result = await protocol.getVaultPosition()
+      await protocol.getVaultPosition()
 
       expect(vaultV2Mock).toHaveBeenCalledWith(VAULT, 1)
-      expect(result.vaultVersion).toBe('v2')
     })
 
     test('should copy options instead of keeping the caller reference', async () => {
@@ -257,15 +256,6 @@ describe('MorphoProtocolEvm', () => {
       await protocol.supply({ token: TOKEN, amount: 100_000n })
 
       expect(vaultV2Mock).toHaveBeenCalledWith(VAULT, 1)
-    })
-
-    test('should reject Morpho Vault V1 configuration', () => {
-      expect(() => new MorphoProtocolEvm(account, {
-        chainId: 1,
-        earnVaultAddress: VAULT,
-        earnVaultVersion: 'v1',
-        borrowMarketParams: MARKET_PARAMS
-      })).toThrow("'earnVaultVersion' must be 'v2'. Morpho Vault V1 is not supported by this WDK module.")
     })
 
     test('should reject earn presets on the wrong chain', async () => {
@@ -529,8 +519,7 @@ describe('MorphoProtocolEvm', () => {
       expect(result).toEqual({
         shares: 123n,
         assets: 123n,
-        vaultAddress: VAULT,
-        vaultVersion: 'v2'
+        vaultAddress: VAULT
       })
     })
 

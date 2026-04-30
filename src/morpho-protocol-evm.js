@@ -69,7 +69,6 @@ import { MORPHO_MARKET_PRESETS, MORPHO_VAULT_PRESETS } from './morpho-presets.js
  * @property {bigint} shares - The account's vault share balance.
  * @property {bigint} assets - The account's vault position converted to underlying assets using current vault data.
  * @property {string} vaultAddress - The configured vault address.
- * @property {'v2'} vaultVersion - The configured vault version.
  */
 
 /**
@@ -90,14 +89,12 @@ import { MORPHO_MARKET_PRESETS, MORPHO_VAULT_PRESETS } from './morpho-presets.js
  * @property {bigint} marketBorrowAssets - The account's configured market borrow assets.
  * @property {bigint} collateral - The account's configured market collateral.
  * @property {string} vaultAddress - The configured vault address.
- * @property {'v2'} vaultVersion - The configured vault version.
  * @property {string} marketId - The configured market id.
  */
 
 /**
  * @typedef {Object} MorphoProtocolOptions
  * @property {string} [earnVaultAddress] - Explicit Morpho vault address. Takes priority over `presets.earn`.
- * @property {'v2'} [earnVaultVersion='v2'] - Optional V2-only compatibility field for `earnVaultAddress`. Omit it to use Morpho Vault V2.
  * @property {string} [borrowMarketId] - Explicit market id. If `borrowMarketParams` is not provided, params are fetched on-chain.
  * @property {Object} [borrowMarketParams] - Explicit Morpho Blue market params. Takes priority over `borrowMarketId` and `presets.borrow`.
  * @property {{ earn?: string, borrow?: string }} [presets] - Curated target names for Ethereum USDT earn/borrow.
@@ -683,8 +680,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
     return {
       shares,
       assets: data.toAssets(shares),
-      vaultAddress: vault.address,
-      vaultVersion: vault.version
+      vaultAddress: vault.address
     }
   }
 
@@ -730,7 +726,6 @@ export default class MorphoProtocolEvm extends LendingProtocol {
       marketBorrowAssets: market.borrowAssets,
       collateral: market.collateral,
       vaultAddress: vault.vaultAddress,
-      vaultVersion: vault.vaultVersion,
       marketId: market.marketId
     }
   }
@@ -762,13 +757,13 @@ export default class MorphoProtocolEvm extends LendingProtocol {
   /** @private */
   async _getVault () {
     const target = this._resolveVaultTarget()
-    const { address, version } = target
+    const { address } = target
     const chainId = await this._getChainId()
     this._assertTargetChain(target, chainId, 'Morpho target')
     const client = await this._getMorphoClient()
     const entity = client.vaultV2(address, chainId)
 
-    return { address, version, entity }
+    return { address, entity }
   }
 
   /** @private */
@@ -883,7 +878,6 @@ export default class MorphoProtocolEvm extends LendingProtocol {
     if (this._options.earnVaultAddress) {
       target = {
         address: this._options.earnVaultAddress,
-        version: this._options.earnVaultVersion || 'v2',
         chainId: this._options.chainId
       }
     } else if (this._options.presets?.earn) {
@@ -938,10 +932,6 @@ export default class MorphoProtocolEvm extends LendingProtocol {
 
     if (options.earnVaultAddress !== undefined && !isAddress(options.earnVaultAddress)) {
       throw new Error("'earnVaultAddress' must be a valid address.")
-    }
-
-    if (options.earnVaultVersion !== undefined && options.earnVaultVersion !== 'v2') {
-      throw new Error("'earnVaultVersion' must be 'v2'. Morpho Vault V1 is not supported by this WDK module.")
     }
 
     if (options.borrowMarketId !== undefined && !isMarketId(options.borrowMarketId)) {

@@ -313,10 +313,6 @@ export type VaultPosition = {
      * - The configured vault address.
      */
     vaultAddress: string;
-    /**
-     * - The configured vault version.
-     */
-    vaultVersion: "v2";
 };
 export type MarketPosition = {
     /**
@@ -370,10 +366,6 @@ export type AccountData = {
      */
     vaultAddress: string;
     /**
-     * - The configured vault version.
-     */
-    vaultVersion: "v2";
-    /**
      * - The configured market id.
      */
     marketId: string;
@@ -383,10 +375,6 @@ export type MorphoProtocolOptions = {
      * - Explicit Morpho vault address. Takes priority over `presets.earn`.
      */
     earnVaultAddress?: string;
-    /**
-     * - Optional V2-only compatibility field for `earnVaultAddress`. Omit it to use Morpho Vault V2.
-     */
-    earnVaultVersion?: "v2";
     /**
      * - Explicit market id. If `borrowMarketParams` is not provided, params are fetched on-chain.
      */

@@ -19,14 +19,12 @@ export const MORPHO_VAULT_PRESETS = Object.freeze({
   'sky-money-usdt-savings': Object.freeze({
     address: '0x23f5E9c35820f4baB695Ac1F19c203cC3f8e1e11',
     name: 'sky.money USDT Savings',
-    chainId: 1,
-    version: 'v2'
+    chainId: 1
   }),
   'steakhouse-prime-instant': Object.freeze({
     address: '0xbeef003C68896c7D2c3c60d363e8d71a49Ab2bf9',
     name: 'Steakhouse Prime Instant',
-    chainId: 1,
-    version: 'v2'
+    chainId: 1
   })
 })
 
