@@ -23,6 +23,7 @@
   "type": "module",
   "types": "./types",
   "scripts": {
+    "build": "npm run build:types",
     "build:types": "tsc",
     "check:vault-v2": "node scripts/check-vault-v2-only.js",
     "lint": "standard",
@@ -48,6 +49,11 @@
     "jest": "29.7.0",
     "standard": "17.1.2",
     "typescript": "5.8.3"
+  },
+  "overrides": {
+    "@gelatonetwork/relay-sdk": {
+      "axios": "^1.15.0"
+    }
   },
   "files": [
     "index.js",
