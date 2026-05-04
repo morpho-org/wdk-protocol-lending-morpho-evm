@@ -1,5 +1,7 @@
 # @tetherto/wdk-protocol-lending-morpho-evm
 
+[![Powered by WDK](https://img.shields.io/badge/Powered%20by-WDK-00A478?style=flat-square)](https://docs.wallet.tether.io)
+
 Note: This package is in beta. Please test in a dev setup first.
 
 A WDK lending module for Morpho on EVM chains. It keeps the same package shape as the Aave WDK lending module, but delegates Morpho vault and market transaction construction to `@morpho-org/morpho-sdk`.
