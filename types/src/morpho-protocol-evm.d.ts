@@ -20,8 +20,6 @@ export default class MorphoProtocolEvm extends LendingProtocol {
     /** @private */
     private _providerSource;
     /** @private */
-    private _provider;
-    /** @private */
     private _chainId;
     /** @private */
     private _viemClient;
@@ -39,10 +37,10 @@ export default class MorphoProtocolEvm extends LendingProtocol {
      * required Morpho bundler spender.
      *
      * @param {MorphoSupplyOptions} options - The supply options.
-     * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+     * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
      * @returns {Promise<SupplyResult>} The supply result.
      */
-    supply(options: MorphoSupplyOptions, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<SupplyResult>;
+    supply(options: MorphoSupplyOptions, config?: Erc4337TransactionConfig): Promise<SupplyResult>;
     /**
      * Returns Morpho SDK requirements for a vault deposit.
      *
@@ -55,10 +53,10 @@ export default class MorphoProtocolEvm extends LendingProtocol {
      * Quotes the cost of a vault deposit transaction.
      *
      * @param {MorphoSupplyOptions} options - The supply options.
-     * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+     * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
      * @returns {Promise<Omit<SupplyResult, 'hash'>>} The fee quote.
      */
-    quoteSupply(options: MorphoSupplyOptions, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<Omit<SupplyResult, "hash">>;
+    quoteSupply(options: MorphoSupplyOptions, config?: Erc4337TransactionConfig): Promise<Omit<SupplyResult, "hash">>;
     /** @private */
     private _getSupplyAction;
     /** @private */
@@ -67,18 +65,18 @@ export default class MorphoProtocolEvm extends LendingProtocol {
      * Withdraws assets from the configured Morpho vault.
      *
      * @param {WithdrawOptions} options - The withdraw options.
-     * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+     * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
      * @returns {Promise<WithdrawResult>} The withdraw result.
      */
-    withdraw(options: WithdrawOptions, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<WithdrawResult>;
+    withdraw(options: WithdrawOptions, config?: Erc4337TransactionConfig): Promise<WithdrawResult>;
     /**
      * Quotes the cost of a vault withdraw transaction.
      *
      * @param {WithdrawOptions} options - The withdraw options.
-     * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+     * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
      * @returns {Promise<Omit<WithdrawResult, 'hash'>>} The fee quote.
      */
-    quoteWithdraw(options: WithdrawOptions, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<Omit<WithdrawResult, "hash">>;
+    quoteWithdraw(options: WithdrawOptions, config?: Erc4337TransactionConfig): Promise<Omit<WithdrawResult, "hash">>;
     /** @private */
     private _getWithdrawTransaction;
     /**
@@ -88,13 +86,13 @@ export default class MorphoProtocolEvm extends LendingProtocol {
      * authorized on Morpho for this account.
      *
      * @param {BorrowOptions & { reallocations?: readonly VaultReallocation[], slippageTolerance?: bigint }} options - The borrow options.
-     * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+     * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
      * @returns {Promise<BorrowResult>} The borrow result.
      */
     borrow(options: BorrowOptions & {
         reallocations?: readonly VaultReallocation[];
         slippageTolerance?: bigint;
-    }, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<BorrowResult>;
+    }, config?: Erc4337TransactionConfig): Promise<BorrowResult>;
     /**
      * Returns Morpho SDK requirements for a borrow.
      *
@@ -109,13 +107,13 @@ export default class MorphoProtocolEvm extends LendingProtocol {
      * Quotes the cost of a borrow transaction.
      *
      * @param {BorrowOptions & { reallocations?: readonly VaultReallocation[], slippageTolerance?: bigint }} options - The borrow options.
-     * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+     * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
      * @returns {Promise<Omit<BorrowResult, 'hash'>>} The fee quote.
      */
     quoteBorrow(options: BorrowOptions & {
         reallocations?: readonly VaultReallocation[];
         slippageTolerance?: bigint;
-    }, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<Omit<BorrowResult, "hash">>;
+    }, config?: Erc4337TransactionConfig): Promise<Omit<BorrowResult, "hash">>;
     /** @private */
     private _getBorrowAction;
     /** @private */
@@ -126,10 +124,10 @@ export default class MorphoProtocolEvm extends LendingProtocol {
      * Pass `amount: 'max'` to repay all current borrow shares.
      *
      * @param {MorphoRepayOptions} options - The repay options.
-     * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+     * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
      * @returns {Promise<RepayResult>} The repay result.
      */
-    repay(options: MorphoRepayOptions, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<RepayResult>;
+    repay(options: MorphoRepayOptions, config?: Erc4337TransactionConfig): Promise<RepayResult>;
     /**
      * Returns Morpho SDK requirements for a repay.
      *
@@ -142,10 +140,10 @@ export default class MorphoProtocolEvm extends LendingProtocol {
      * Quotes the cost of a repay transaction.
      *
      * @param {MorphoRepayOptions} options - The repay options.
-     * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+     * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
      * @returns {Promise<Omit<RepayResult, 'hash'>>} The fee quote.
      */
-    quoteRepay(options: MorphoRepayOptions, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<Omit<RepayResult, "hash">>;
+    quoteRepay(options: MorphoRepayOptions, config?: Erc4337TransactionConfig): Promise<Omit<RepayResult, "hash">>;
     /** @private */
     private _getRepayAction;
     /** @private */
@@ -154,10 +152,10 @@ export default class MorphoProtocolEvm extends LendingProtocol {
      * Supplies collateral to the configured Morpho Blue market.
      *
      * @param {MorphoSupplyOptions} options - The collateral supply options.
-     * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+     * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
      * @returns {Promise<SupplyResult>} The supply collateral result.
      */
-    supplyCollateral(options: MorphoSupplyOptions, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<SupplyResult>;
+    supplyCollateral(options: MorphoSupplyOptions, config?: Erc4337TransactionConfig): Promise<SupplyResult>;
     /**
      * Returns Morpho SDK requirements for supplying collateral.
      *
@@ -170,10 +168,10 @@ export default class MorphoProtocolEvm extends LendingProtocol {
      * Quotes the cost of supplying collateral.
      *
      * @param {MorphoSupplyOptions} options - The collateral supply options.
-     * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+     * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
      * @returns {Promise<Omit<SupplyResult, 'hash'>>} The fee quote.
      */
-    quoteSupplyCollateral(options: MorphoSupplyOptions, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<Omit<SupplyResult, "hash">>;
+    quoteSupplyCollateral(options: MorphoSupplyOptions, config?: Erc4337TransactionConfig): Promise<Omit<SupplyResult, "hash">>;
     /** @private */
     private _getSupplyCollateralAction;
     /** @private */
@@ -182,18 +180,18 @@ export default class MorphoProtocolEvm extends LendingProtocol {
      * Withdraws collateral from the configured Morpho Blue market.
      *
      * @param {WithdrawOptions} options - The collateral withdraw options.
-     * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+     * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
      * @returns {Promise<WithdrawResult>} The withdraw collateral result.
      */
-    withdrawCollateral(options: WithdrawOptions, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<WithdrawResult>;
+    withdrawCollateral(options: WithdrawOptions, config?: Erc4337TransactionConfig): Promise<WithdrawResult>;
     /**
      * Quotes the cost of withdrawing collateral.
      *
      * @param {WithdrawOptions} options - The collateral withdraw options.
-     * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+     * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
      * @returns {Promise<Omit<WithdrawResult, 'hash'>>} The fee quote.
      */
-    quoteWithdrawCollateral(options: WithdrawOptions, config?: Pick<EvmErc4337WalletConfig, "paymasterToken">): Promise<Omit<WithdrawResult, "hash">>;
+    quoteWithdrawCollateral(options: WithdrawOptions, config?: Erc4337TransactionConfig): Promise<Omit<WithdrawResult, "hash">>;
     /** @private */
     private _getWithdrawCollateralTransaction;
     /**
@@ -238,6 +236,10 @@ export default class MorphoProtocolEvm extends LendingProtocol {
     /** @private */
     private _getMorphoClient;
     /** @private */
+    private _getViemTransport;
+    /** @private */
+    private _getViemChain;
+    /** @private */
     private _getViemClient;
     /** @private */
     private _getChainId;
@@ -264,7 +266,6 @@ export default class MorphoProtocolEvm extends LendingProtocol {
     /** @private */
     private _quoteTransaction;
 }
-export type TransactionResult = import("@tetherto/wdk-wallet").TransactionResult;
 export type BorrowOptions = import("@tetherto/wdk-wallet/protocols").BorrowOptions;
 export type BorrowResult = import("@tetherto/wdk-wallet/protocols").BorrowResult;
 export type SupplyOptions = import("@tetherto/wdk-wallet/protocols").SupplyOptions;
@@ -274,7 +275,10 @@ export type WithdrawResult = import("@tetherto/wdk-wallet/protocols").WithdrawRe
 export type RepayOptions = import("@tetherto/wdk-wallet/protocols").RepayOptions;
 export type RepayResult = import("@tetherto/wdk-wallet/protocols").RepayResult;
 export type WalletAccountReadOnlyEvm = import("@tetherto/wdk-wallet-evm").WalletAccountReadOnlyEvm;
-export type EvmErc4337WalletConfig = import("@tetherto/wdk-wallet-evm-erc-4337").EvmErc4337WalletConfig;
+export type EvmErc4337WalletPaymasterTokenConfig = import("@tetherto/wdk-wallet-evm-erc-4337").EvmErc4337WalletPaymasterTokenConfig;
+export type EvmErc4337WalletSponsorshipPolicyConfig = import("@tetherto/wdk-wallet-evm-erc-4337").EvmErc4337WalletSponsorshipPolicyConfig;
+export type EvmErc4337WalletNativeCoinsConfig = import("@tetherto/wdk-wallet-evm-erc-4337").EvmErc4337WalletNativeCoinsConfig;
+export type Erc4337TransactionConfig = Partial<EvmErc4337WalletPaymasterTokenConfig | EvmErc4337WalletSponsorshipPolicyConfig | EvmErc4337WalletNativeCoinsConfig>;
 export type RequirementApproval = Readonly<import("@morpho-org/morpho-sdk").Transaction<import("@morpho-org/morpho-sdk").ERC20ApprovalAction>>;
 export type RequirementAuthorization = Readonly<import("@morpho-org/morpho-sdk").Transaction<import("@morpho-org/morpho-sdk").MorphoAuthorizationAction>>;
 export type RequirementSignatureRequest = import("@morpho-org/morpho-sdk").Requirement;
@@ -382,7 +386,7 @@ export type MorphoProtocolOptions = {
     /**
      * - Explicit Morpho Blue market params. Takes priority over `borrowMarketId` and `presets.borrow`.
      */
-    borrowMarketParams?: any;
+    borrowMarketParams?: import("@morpho-org/blue-sdk").InputMarketParams;
     /**
      * - Curated target names for Ethereum USDT earn/borrow.
      */
@@ -399,11 +403,11 @@ export type MorphoProtocolOptions = {
      */
     slippageTolerance?: bigint;
     /**
-     * - Enable Morpho SDK permit/permit2 requirements.
+     * - Enable Morpho SDK permit/permit2 requirements (default: false).
      */
     supportSignature?: boolean;
     /**
-     * - Enable Morpho SDK deployless reads.
+     * - Enable Morpho SDK deployless reads (default: false).
      */
     supportDeployless?: boolean;
 };

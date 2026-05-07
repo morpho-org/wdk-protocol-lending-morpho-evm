@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, jest, test } from '@jest/globals'
 
-import * as ethers from 'ethers'
 import * as viem from 'viem'
 
 const SEED = 'cook voyage document eight skate token alien guide drink uncle term abuse'
@@ -82,11 +81,12 @@ const morphoClientMock = jest.fn().mockImplementation(() => ({
   marketV1: marketV1Mock
 }))
 const fetchMarketMock = jest.fn()
-const mockGetNetwork = jest.fn().mockResolvedValue({ chainId: 1n })
+const mockGetChainId = jest.fn().mockResolvedValue(1)
 const readContractMock = jest.fn().mockResolvedValue(123n)
 const extendMock = jest.fn().mockReturnValue({
   account: { address: ADDRESS },
   chain: { id: 1 },
+  getChainId: mockGetChainId,
   readContract: readContractMock
 })
 const createClientMock = jest.fn().mockReturnValue({ extend: extendMock })
@@ -97,16 +97,6 @@ jest.unstable_mockModule('@morpho-org/morpho-sdk', () => ({
 
 jest.unstable_mockModule('@morpho-org/blue-sdk-viem', () => ({
   fetchMarket: fetchMarketMock
-}))
-
-jest.unstable_mockModule('ethers', () => ({
-  ...ethers,
-  JsonRpcProvider: jest.fn().mockImplementation(() => ({
-    getNetwork: mockGetNetwork
-  })),
-  BrowserProvider: jest.fn().mockImplementation(() => ({
-    getNetwork: mockGetNetwork
-  }))
 }))
 
 jest.unstable_mockModule('viem', () => ({
@@ -128,7 +118,7 @@ describe('MorphoProtocolEvm', () => {
     fetchMarketMock.mockResolvedValue({
       params: new MarketParams(MARKET_PARAMS)
     })
-    mockGetNetwork.mockResolvedValue({ chainId: 1n })
+    mockGetChainId.mockResolvedValue(1)
     readContractMock.mockResolvedValue(123n)
 
     account = new WalletAccountEvm(SEED, "0'/0/0", {
@@ -259,7 +249,7 @@ describe('MorphoProtocolEvm', () => {
     })
 
     test('should reject earn presets on the wrong chain', async () => {
-      mockGetNetwork.mockResolvedValue({ chainId: 8453n })
+      mockGetChainId.mockResolvedValue(8453)
       const protocol = new MorphoProtocolEvm(account, {
         chainId: 1,
         presets: { earn: 'sky-money-usdt-savings' },
@@ -362,7 +352,7 @@ describe('MorphoProtocolEvm', () => {
     })
 
     test('should reject borrow presets on the wrong chain', async () => {
-      mockGetNetwork.mockResolvedValue({ chainId: 8453n })
+      mockGetChainId.mockResolvedValue(8453)
       const protocol = new MorphoProtocolEvm(account, {
         chainId: 1,
         earnVaultAddress: VAULT,
@@ -499,9 +489,10 @@ describe('MorphoProtocolEvm', () => {
         borrowMarketParams: MARKET_PARAMS
       })
 
-      const result = await protocol.supply({ token: TOKEN, amount: 100_000n }, { paymasterToken: 'USDT' })
+      const config = { paymasterToken: { address: TOKEN } }
+      const result = await protocol.supply({ token: TOKEN, amount: 100_000n }, config)
 
-      expect(account.sendTransaction).toHaveBeenCalledWith(SUPPLY_TX, { paymasterToken: 'USDT' })
+      expect(account.sendTransaction).toHaveBeenCalledWith(SUPPLY_TX, config)
       expect(result).toEqual({ hash: 'dummy-user-operation-hash', fee: 12_345n })
     })
   })
@@ -539,7 +530,7 @@ describe('MorphoProtocolEvm', () => {
       await protocol.getMarketPosition()
       expect(marketV1Mock).toHaveBeenCalledWith(expect.any(Object), 1)
 
-      mockGetNetwork.mockResolvedValue({ chainId: 8453n })
+      mockGetChainId.mockResolvedValue(8453)
 
       await expect(protocol.getMarketPosition())
         .rejects.toThrow('Morpho target is configured for chain 1, but the connected provider is on chain 8453.')

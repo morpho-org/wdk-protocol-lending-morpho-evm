@@ -29,6 +29,16 @@
 /** @typedef {import('./src/morpho-protocol-evm.js').VaultPosition} VaultPosition */
 /** @typedef {import('./src/morpho-protocol-evm.js').MarketPosition} MarketPosition */
 /** @typedef {import('./src/morpho-protocol-evm.js').MorphoProtocolOptions} MorphoProtocolOptions */
+/** @typedef {import('./src/morpho-protocol-evm.js').MorphoSupplyOptions} MorphoSupplyOptions */
+/** @typedef {import('./src/morpho-protocol-evm.js').MorphoRepayOptions} MorphoRepayOptions */
+/** @typedef {import('./src/morpho-protocol-evm.js').RequirementOptions} RequirementOptions */
+/** @typedef {import('./src/morpho-protocol-evm.js').ApprovalOrSignatureRequirement} ApprovalOrSignatureRequirement */
+/** @typedef {import('./src/morpho-protocol-evm.js').RequirementApproval} RequirementApproval */
+/** @typedef {import('./src/morpho-protocol-evm.js').RequirementAuthorization} RequirementAuthorization */
+/** @typedef {import('./src/morpho-protocol-evm.js').RequirementSignatureRequest} RequirementSignatureRequest */
+/** @typedef {import('./src/morpho-protocol-evm.js').RequirementSignature} RequirementSignature */
+/** @typedef {import('./src/morpho-protocol-evm.js').VaultReallocation} VaultReallocation */
+/** @typedef {import('./src/morpho-protocol-evm.js').Erc4337TransactionConfig} Erc4337TransactionConfig */
 
 export { default } from './src/morpho-protocol-evm.js'
 

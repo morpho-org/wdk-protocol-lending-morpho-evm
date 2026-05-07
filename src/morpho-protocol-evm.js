@@ -20,7 +20,6 @@ import { MorphoClient } from '@morpho-org/morpho-sdk'
 import { LendingProtocol } from '@tetherto/wdk-wallet/protocols'
 import { WalletAccountEvm } from '@tetherto/wdk-wallet-evm'
 import { WalletAccountEvmErc4337, WalletAccountReadOnlyEvmErc4337 } from '@tetherto/wdk-wallet-evm-erc-4337'
-import { BrowserProvider, JsonRpcProvider } from 'ethers'
 import {
   createClient,
   custom,
@@ -34,8 +33,6 @@ import {
 import { arbitrum, base, mainnet, optimism, polygon } from 'viem/chains'
 import { MORPHO_MARKET_PRESETS, MORPHO_VAULT_PRESETS } from './morpho-presets.js'
 
-/** @typedef {import('@tetherto/wdk-wallet').TransactionResult} TransactionResult */
-
 /** @typedef {import('@tetherto/wdk-wallet/protocols').BorrowOptions} BorrowOptions */
 /** @typedef {import('@tetherto/wdk-wallet/protocols').BorrowResult} BorrowResult */
 /** @typedef {import('@tetherto/wdk-wallet/protocols').SupplyOptions} SupplyOptions */
@@ -47,7 +44,10 @@ import { MORPHO_MARKET_PRESETS, MORPHO_VAULT_PRESETS } from './morpho-presets.js
 
 /** @typedef {import('@tetherto/wdk-wallet-evm').WalletAccountReadOnlyEvm} WalletAccountReadOnlyEvm */
 
-/** @typedef {import('@tetherto/wdk-wallet-evm-erc-4337').EvmErc4337WalletConfig} EvmErc4337WalletConfig */
+/** @typedef {import('@tetherto/wdk-wallet-evm-erc-4337').EvmErc4337WalletPaymasterTokenConfig} EvmErc4337WalletPaymasterTokenConfig */
+/** @typedef {import('@tetherto/wdk-wallet-evm-erc-4337').EvmErc4337WalletSponsorshipPolicyConfig} EvmErc4337WalletSponsorshipPolicyConfig */
+/** @typedef {import('@tetherto/wdk-wallet-evm-erc-4337').EvmErc4337WalletNativeCoinsConfig} EvmErc4337WalletNativeCoinsConfig */
+/** @typedef {Partial<EvmErc4337WalletPaymasterTokenConfig | EvmErc4337WalletSponsorshipPolicyConfig | EvmErc4337WalletNativeCoinsConfig>} Erc4337TransactionConfig */
 /** @typedef {Readonly<import('@morpho-org/morpho-sdk').Transaction<import('@morpho-org/morpho-sdk').ERC20ApprovalAction>>} RequirementApproval */
 /** @typedef {Readonly<import('@morpho-org/morpho-sdk').Transaction<import('@morpho-org/morpho-sdk').MorphoAuthorizationAction>>} RequirementAuthorization */
 /** @typedef {import('@morpho-org/morpho-sdk').Requirement} RequirementSignatureRequest */
@@ -96,12 +96,12 @@ import { MORPHO_MARKET_PRESETS, MORPHO_VAULT_PRESETS } from './morpho-presets.js
  * @typedef {Object} MorphoProtocolOptions
  * @property {string} [earnVaultAddress] - Explicit Morpho vault address. Takes priority over `presets.earn`.
  * @property {string} [borrowMarketId] - Explicit market id. If `borrowMarketParams` is not provided, params are fetched on-chain.
- * @property {Object} [borrowMarketParams] - Explicit Morpho Blue market params. Takes priority over `borrowMarketId` and `presets.borrow`.
+ * @property {import('@morpho-org/blue-sdk').InputMarketParams} [borrowMarketParams] - Explicit Morpho Blue market params. Takes priority over `borrowMarketId` and `presets.borrow`.
  * @property {{ earn?: string, borrow?: string }} [presets] - Curated target names for Ethereum USDT earn/borrow.
  * @property {number | bigint} [chainId] - Required when explicit Morpho targets are used; guards against wallet chain switches.
  * @property {bigint} [slippageTolerance] - Optional Morpho SDK slippage tolerance in WAD precision.
- * @property {boolean} [supportSignature=false] - Enable Morpho SDK permit/permit2 requirements.
- * @property {boolean} [supportDeployless=false] - Enable Morpho SDK deployless reads.
+ * @property {boolean} [supportSignature] - Enable Morpho SDK permit/permit2 requirements (default: false).
+ * @property {boolean} [supportDeployless] - Enable Morpho SDK deployless reads (default: false).
  */
 
 const SUPPORTED_CHAINS = {
@@ -122,7 +122,7 @@ function isMarketId (value) {
 
 function normalizeAmount (amount, field = 'amount') {
   if (typeof amount !== 'bigint' && typeof amount !== 'number') {
-    throw new Error(`'${field}' should be greater than zero.`)
+    throw new Error(`'${field}' must be a number or bigint.`)
   }
 
   if (amount <= 0) {
@@ -136,7 +136,7 @@ function normalizeOptionalNonNegativeAmount (amount, field) {
   if (amount === undefined) return 0n
 
   if (typeof amount !== 'bigint' && typeof amount !== 'number') {
-    throw new Error(`'${field}' should be a non-negative amount.`)
+    throw new Error(`'${field}' must be a number or bigint.`)
   }
 
   if (amount < 0) {
@@ -219,11 +219,6 @@ export default class MorphoProtocolEvm extends LendingProtocol {
     this._providerSource = provider
 
     /** @private */
-    this._provider = typeof provider === 'string'
-      ? new JsonRpcProvider(provider)
-      : new BrowserProvider(provider)
-
-    /** @private */
     this._chainId = undefined
 
     /** @private */
@@ -247,19 +242,19 @@ export default class MorphoProtocolEvm extends LendingProtocol {
    * required Morpho bundler spender.
    *
    * @param {MorphoSupplyOptions} options - The supply options.
-   * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+   * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
    * @returns {Promise<SupplyResult>} The supply result.
    */
   async supply (options, config) {
     this._assertWritable('supply(options)')
-    const { amount } = normalizeDepositAmounts(options)
-    if (amount > 0n) {
-      await this._assertTokenBalance(options.token, amount)
+    const depositAmounts = normalizeDepositAmounts(options)
+    if (depositAmounts.amount > 0n) {
+      await this._assertTokenBalance(options.token, depositAmounts.amount)
     } else {
       this._assertAddress('token', options.token)
     }
 
-    const tx = await this._getSupplyTransaction(options)
+    const tx = await this._getSupplyTransaction(options, depositAmounts)
 
     return await this._sendTransaction(tx, config)
   }
@@ -281,7 +276,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
    * Quotes the cost of a vault deposit transaction.
    *
    * @param {MorphoSupplyOptions} options - The supply options.
-   * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+   * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
    * @returns {Promise<Omit<SupplyResult, 'hash'>>} The fee quote.
    */
   async quoteSupply (options, config) {
@@ -291,10 +286,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
   }
 
   /** @private */
-  async _getSupplyAction ({ token, amount, nativeAmount, onBehalfOf, slippageTolerance }) {
-    const depositAmounts = normalizeDepositAmounts({ amount, nativeAmount })
-    amount = depositAmounts.amount
-    nativeAmount = depositAmounts.nativeAmount
+  async _getSupplyAction ({ token, amount, nativeAmount, onBehalfOf, slippageTolerance }, depositAmounts = normalizeDepositAmounts({ amount, nativeAmount })) {
     this._assertAddress('token', token)
     this._assertOptionalAddress('onBehalfOf', onBehalfOf)
 
@@ -307,8 +299,8 @@ export default class MorphoProtocolEvm extends LendingProtocol {
     }
 
     return vault.entity.deposit({
-      amount,
-      nativeAmount,
+      amount: depositAmounts.amount,
+      nativeAmount: depositAmounts.nativeAmount,
       userAddress,
       accrualVault,
       slippageTolerance: slippageTolerance ?? this._options.slippageTolerance
@@ -316,8 +308,8 @@ export default class MorphoProtocolEvm extends LendingProtocol {
   }
 
   /** @private */
-  async _getSupplyTransaction (options) {
-    const action = await this._getSupplyAction(options)
+  async _getSupplyTransaction (options, depositAmounts) {
+    const action = await this._getSupplyAction(options, depositAmounts)
 
     return toWdkTransaction(action.buildTx(options.requirementSignature))
   }
@@ -326,7 +318,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
    * Withdraws assets from the configured Morpho vault.
    *
    * @param {WithdrawOptions} options - The withdraw options.
-   * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+   * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
    * @returns {Promise<WithdrawResult>} The withdraw result.
    */
   async withdraw (options, config) {
@@ -341,7 +333,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
    * Quotes the cost of a vault withdraw transaction.
    *
    * @param {WithdrawOptions} options - The withdraw options.
-   * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+   * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
    * @returns {Promise<Omit<WithdrawResult, 'hash'>>} The fee quote.
    */
   async quoteWithdraw (options, config) {
@@ -381,7 +373,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
    * authorized on Morpho for this account.
    *
    * @param {BorrowOptions & { reallocations?: readonly VaultReallocation[], slippageTolerance?: bigint }} options - The borrow options.
-   * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+   * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
    * @returns {Promise<BorrowResult>} The borrow result.
    */
   async borrow (options, config) {
@@ -408,7 +400,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
    * Quotes the cost of a borrow transaction.
    *
    * @param {BorrowOptions & { reallocations?: readonly VaultReallocation[], slippageTolerance?: bigint }} options - The borrow options.
-   * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+   * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
    * @returns {Promise<Omit<BorrowResult, 'hash'>>} The fee quote.
    */
   async quoteBorrow (options, config) {
@@ -454,17 +446,18 @@ export default class MorphoProtocolEvm extends LendingProtocol {
    * Pass `amount: 'max'` to repay all current borrow shares.
    *
    * @param {MorphoRepayOptions} options - The repay options.
-   * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+   * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
    * @returns {Promise<RepayResult>} The repay result.
    */
   async repay (options, config) {
     this._assertWritable('repay(options)')
+    const amount = options.amount === 'max' ? 'max' : normalizeAmount(options.amount)
 
-    if (options.amount !== 'max') {
-      await this._assertTokenBalance(options.token, normalizeAmount(options.amount))
+    if (amount !== 'max') {
+      await this._assertTokenBalance(options.token, amount)
     }
 
-    const tx = await this._getRepayTransaction(options)
+    const tx = await this._getRepayTransaction(options, amount)
 
     return await this._sendTransaction(tx, config)
   }
@@ -486,7 +479,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
    * Quotes the cost of a repay transaction.
    *
    * @param {MorphoRepayOptions} options - The repay options.
-   * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+   * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
    * @returns {Promise<Omit<RepayResult, 'hash'>>} The fee quote.
    */
   async quoteRepay (options, config) {
@@ -496,7 +489,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
   }
 
   /** @private */
-  async _getRepayAction ({ token, amount, onBehalfOf, slippageTolerance }) {
+  async _getRepayAction ({ token, amount, onBehalfOf, slippageTolerance }, normalizedAmount = amount === 'max' ? 'max' : normalizeAmount(amount)) {
     this._assertAddress('token', token)
     this._assertOptionalAddress('onBehalfOf', onBehalfOf)
 
@@ -508,9 +501,9 @@ export default class MorphoProtocolEvm extends LendingProtocol {
     }
 
     const positionData = await market.entity.getPositionData(userAddress)
-    const repayAmount = amount === 'max'
+    const repayAmount = normalizedAmount === 'max'
       ? { shares: positionData.borrowShares }
-      : { assets: normalizeAmount(amount) }
+      : { assets: normalizedAmount }
 
     return market.entity.repay({
       ...repayAmount,
@@ -521,8 +514,8 @@ export default class MorphoProtocolEvm extends LendingProtocol {
   }
 
   /** @private */
-  async _getRepayTransaction (options) {
-    const action = await this._getRepayAction(options)
+  async _getRepayTransaction (options, amount) {
+    const action = await this._getRepayAction(options, amount)
 
     return toWdkTransaction(action.buildTx(options.requirementSignature))
   }
@@ -531,19 +524,19 @@ export default class MorphoProtocolEvm extends LendingProtocol {
    * Supplies collateral to the configured Morpho Blue market.
    *
    * @param {MorphoSupplyOptions} options - The collateral supply options.
-   * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+   * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
    * @returns {Promise<SupplyResult>} The supply collateral result.
    */
   async supplyCollateral (options, config) {
     this._assertWritable('supplyCollateral(options)')
-    const { amount } = normalizeDepositAmounts(options)
-    if (amount > 0n) {
-      await this._assertTokenBalance(options.token, amount)
+    const depositAmounts = normalizeDepositAmounts(options)
+    if (depositAmounts.amount > 0n) {
+      await this._assertTokenBalance(options.token, depositAmounts.amount)
     } else {
       this._assertAddress('token', options.token)
     }
 
-    const tx = await this._getSupplyCollateralTransaction(options)
+    const tx = await this._getSupplyCollateralTransaction(options, depositAmounts)
 
     return await this._sendTransaction(tx, config)
   }
@@ -565,7 +558,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
    * Quotes the cost of supplying collateral.
    *
    * @param {MorphoSupplyOptions} options - The collateral supply options.
-   * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+   * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
    * @returns {Promise<Omit<SupplyResult, 'hash'>>} The fee quote.
    */
   async quoteSupplyCollateral (options, config) {
@@ -575,10 +568,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
   }
 
   /** @private */
-  async _getSupplyCollateralAction ({ token, amount, nativeAmount, onBehalfOf }) {
-    const depositAmounts = normalizeDepositAmounts({ amount, nativeAmount })
-    amount = depositAmounts.amount
-    nativeAmount = depositAmounts.nativeAmount
+  async _getSupplyCollateralAction ({ token, amount, nativeAmount, onBehalfOf }, depositAmounts = normalizeDepositAmounts({ amount, nativeAmount })) {
     this._assertAddress('token', token)
     this._assertOptionalAddress('onBehalfOf', onBehalfOf)
 
@@ -590,15 +580,15 @@ export default class MorphoProtocolEvm extends LendingProtocol {
     }
 
     return market.entity.supplyCollateral({
-      amount,
-      nativeAmount,
+      amount: depositAmounts.amount,
+      nativeAmount: depositAmounts.nativeAmount,
       userAddress
     })
   }
 
   /** @private */
-  async _getSupplyCollateralTransaction (options) {
-    const action = await this._getSupplyCollateralAction(options)
+  async _getSupplyCollateralTransaction (options, depositAmounts) {
+    const action = await this._getSupplyCollateralAction(options, depositAmounts)
 
     return toWdkTransaction(action.buildTx(options.requirementSignature))
   }
@@ -607,7 +597,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
    * Withdraws collateral from the configured Morpho Blue market.
    *
    * @param {WithdrawOptions} options - The collateral withdraw options.
-   * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+   * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
    * @returns {Promise<WithdrawResult>} The withdraw collateral result.
    */
   async withdrawCollateral (options, config) {
@@ -622,7 +612,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
    * Quotes the cost of withdrawing collateral.
    *
    * @param {WithdrawOptions} options - The collateral withdraw options.
-   * @param {Pick<EvmErc4337WalletConfig, 'paymasterToken'>} [config] - ERC-4337 paymaster config override.
+   * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
    * @returns {Promise<Omit<WithdrawResult, 'hash'>>} The fee quote.
    */
   async quoteWithdrawCollateral (options, config) {
@@ -796,7 +786,6 @@ export default class MorphoProtocolEvm extends LendingProtocol {
     }
 
     const client = await this._getViemClient()
-    this._assertTargetChain(target, chainId, 'Morpho target')
     const market = await fetchMarket(target.marketId, client, {
       chainId,
       deployless: this._options.supportDeployless
@@ -825,6 +814,23 @@ export default class MorphoProtocolEvm extends LendingProtocol {
   }
 
   /** @private */
+  _getViemTransport () {
+    return typeof this._providerSource === 'string'
+      ? http(this._providerSource)
+      : custom(this._providerSource)
+  }
+
+  /** @private */
+  _getViemChain (chainId) {
+    return SUPPORTED_CHAINS[chainId] || {
+      id: chainId,
+      name: `Chain ${chainId}`,
+      nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+      rpcUrls: { default: { http: typeof this._providerSource === 'string' ? [this._providerSource] : [] } }
+    }
+  }
+
+  /** @private */
   async _getViemClient () {
     const address = await this._account.getAddress()
     const chainId = await this._getChainId()
@@ -833,20 +839,10 @@ export default class MorphoProtocolEvm extends LendingProtocol {
       return this._viemClient
     }
 
-    const chain = SUPPORTED_CHAINS[chainId] || {
-      id: chainId,
-      name: `Chain ${chainId}`,
-      nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-      rpcUrls: { default: { http: typeof this._providerSource === 'string' ? [this._providerSource] : [] } }
-    }
-    const transport = typeof this._providerSource === 'string'
-      ? http(this._providerSource)
-      : custom(this._providerSource)
-
     this._viemClient = createClient({
       account: address,
-      chain,
-      transport
+      chain: this._getViemChain(chainId),
+      transport: this._getViemTransport()
     }).extend(publicActions)
     this._viemClientAccount = address
     this._morphoClient = undefined
@@ -856,8 +852,9 @@ export default class MorphoProtocolEvm extends LendingProtocol {
 
   /** @private */
   async _getChainId () {
-    const { chainId } = await this._provider.getNetwork()
-    const currentChainId = Number(chainId)
+    const currentChainId = Number(await createClient({
+      transport: this._getViemTransport()
+    }).extend(publicActions).getChainId())
 
     if (this._chainId !== undefined && this._chainId !== currentChainId) {
       this._viemClient = undefined
@@ -903,7 +900,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
 
     if (this._options.presets?.borrow) {
       const preset = MORPHO_MARKET_PRESETS[this._options.presets.borrow]
-      if (preset) return { marketId: preset.marketId, chainId: preset.chainId }
+      return { marketId: preset.marketId, chainId: preset.chainId }
     }
 
     throw new Error('No Morpho borrow market configured. Set borrowMarketParams, borrowMarketId, or presets.borrow.')

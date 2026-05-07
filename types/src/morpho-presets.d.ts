@@ -1,4 +1,3 @@
-/** @internal */
 export const MORPHO_VAULT_PRESETS: Readonly<{
     'sky-money-usdt-savings': Readonly<{
         address: "0x23f5E9c35820f4baB695Ac1F19c203cC3f8e1e11";
@@ -11,7 +10,6 @@ export const MORPHO_VAULT_PRESETS: Readonly<{
         chainId: 1;
     }>;
 }>;
-/** @internal */
 export const MORPHO_MARKET_PRESETS: Readonly<{
     susds: Readonly<{
         marketId: "0x3274643db77a064abd3bc851de77556a4ad2e2f502f4f0c80845fa8f909ecf0b";

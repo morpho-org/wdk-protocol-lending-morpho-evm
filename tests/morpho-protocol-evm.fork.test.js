@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process'
 import { createServer } from 'node:net'
 import { setTimeout as delay } from 'node:timers/promises'
 
-import { Contract, JsonRpcProvider, parseUnits } from 'ethers'
+import { createPublicClient, createWalletClient, erc20Abi, http, parseUnits } from 'viem'
 import { WalletAccountEvm } from '@tetherto/wdk-wallet-evm'
 import MorphoProtocolEvm from '../index.js'
 
@@ -58,7 +58,7 @@ function toWdkTransaction (tx) {
 maybeDescribe('MorphoProtocolEvm fork e2e', () => {
   let anvil
   let rpcUrl
-  let provider
+  let publicClient
 
   beforeAll(async () => {
     const port = await getFreePort()
@@ -76,7 +76,9 @@ maybeDescribe('MorphoProtocolEvm fork e2e', () => {
     })
 
     await waitForRpc(rpcUrl)
-    provider = new JsonRpcProvider(rpcUrl)
+    publicClient = createPublicClient({
+      transport: http(rpcUrl)
+    })
   }, 60_000)
 
   afterAll(async () => {
@@ -89,26 +91,36 @@ maybeDescribe('MorphoProtocolEvm fork e2e', () => {
   test('executes requirements and a vault deposit on a mainnet fork', async () => {
     const account = new WalletAccountEvm(SEED, "0'/0/0", { provider: rpcUrl })
     const accountAddress = await account.getAddress()
-    const usdt = new Contract(USDT, [
-      'function balanceOf(address) view returns (uint256)',
-      'function transfer(address,uint256)'
-    ], provider)
+    const whale = createWalletClient({
+      account: USDT_WHALE,
+      transport: http(rpcUrl)
+    })
 
-    await provider.send('anvil_setBalance', [
+    await publicClient.request({ method: 'anvil_setBalance', params: [
       accountAddress,
       '0x3635C9ADC5DEA00000'
-    ])
-    await provider.send('anvil_setBalance', [
+    ] })
+    await publicClient.request({ method: 'anvil_setBalance', params: [
       USDT_WHALE,
       '0x3635C9ADC5DEA00000'
-    ])
-    await provider.send('anvil_impersonateAccount', [USDT_WHALE])
+    ] })
+    await publicClient.request({ method: 'anvil_impersonateAccount', params: [USDT_WHALE] })
 
-    const whale = await provider.getSigner(USDT_WHALE)
-    await (await usdt.connect(whale).transfer(accountAddress, parseUnits('10', 6))).wait()
-    await provider.send('anvil_stopImpersonatingAccount', [USDT_WHALE])
+    const hash = await whale.writeContract({
+      address: USDT,
+      abi: erc20Abi,
+      functionName: 'transfer',
+      args: [accountAddress, parseUnits('10', 6)]
+    })
+    await publicClient.waitForTransactionReceipt({ hash })
+    await publicClient.request({ method: 'anvil_stopImpersonatingAccount', params: [USDT_WHALE] })
 
-    expect(await usdt.balanceOf(accountAddress)).toBeGreaterThanOrEqual(DEPOSIT_AMOUNT)
+    expect(await publicClient.readContract({
+      address: USDT,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [accountAddress]
+    })).toBeGreaterThanOrEqual(DEPOSIT_AMOUNT)
 
     const morpho = new MorphoProtocolEvm(account, {
       chainId: 1,
