@@ -14,7 +14,7 @@
 
 'use strict'
 
-import { readFile } from 'node:fs/promises'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -31,6 +31,14 @@ const checks = [
   },
   {
     file: 'tests/morpho-protocol-evm.test.js',
+    patterns: [
+      'vaultV1',
+      'earnVaultVersion',
+      'vaultVersion'
+    ]
+  },
+  {
+    file: 'tests/integration/module.test.js',
     patterns: [
       'vaultV1',
       'earnVaultVersion',
@@ -57,11 +65,12 @@ const checks = [
 ]
 
 for (const check of checks) {
-  const content = await readFile(join(root, check.file), 'utf8')
+  const content = readFileSync(join(root, check.file), 'utf8')
   const pattern = check.patterns.find((pattern) => content.includes(pattern))
 
   if (pattern) {
-    throw new Error(`${check.file} contains unsupported Morpho vault reference '${pattern}'. Use Morpho Vault V2 only.`)
+    console.error(`${check.file} contains unsupported Morpho vault reference '${pattern}'. Use Morpho Vault V2 only.`)
+    process.exit(1)
   }
 }
 

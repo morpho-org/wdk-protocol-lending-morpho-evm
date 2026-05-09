@@ -33,6 +33,7 @@ import {
 import { arbitrum, base, mainnet, optimism, polygon } from 'viem/chains'
 import { MORPHO_MARKET_PRESETS, MORPHO_VAULT_PRESETS } from './morpho-presets.js'
 
+/** @typedef {import('@morpho-org/blue-sdk').InputMarketParams} InputMarketParams */
 /** @typedef {import('@tetherto/wdk-wallet/protocols').BorrowOptions} BorrowOptions */
 /** @typedef {import('@tetherto/wdk-wallet/protocols').BorrowResult} BorrowResult */
 /** @typedef {import('@tetherto/wdk-wallet/protocols').SupplyOptions} SupplyOptions */
@@ -53,15 +54,57 @@ import { MORPHO_MARKET_PRESETS, MORPHO_VAULT_PRESETS } from './morpho-presets.js
 /** @typedef {import('@morpho-org/morpho-sdk').Requirement} RequirementSignatureRequest */
 /** @typedef {import('@morpho-org/morpho-sdk').RequirementSignature} RequirementSignature */
 /** @typedef {import('@morpho-org/morpho-sdk').VaultReallocation} VaultReallocation */
-/** @typedef {{ useSimplePermit?: boolean }} RequirementOptions */
 /** @typedef {RequirementApproval | RequirementSignatureRequest} ApprovalOrSignatureRequirement */
 
 /**
- * @typedef {(Omit<SupplyOptions, 'amount'> & { amount: number | bigint, nativeAmount?: number | bigint, requirementSignature?: RequirementSignature, slippageTolerance?: bigint }) | (Omit<SupplyOptions, 'amount'> & { amount?: number | bigint, nativeAmount: number | bigint, requirementSignature?: RequirementSignature, slippageTolerance?: bigint })} MorphoSupplyOptions
+ * @typedef {Object} RequirementOptions
+ * @property {boolean} [useSimplePermit] - Prefer the Morpho SDK simple permit flow when generating approval requirements.
  */
 
 /**
- * @typedef {Omit<RepayOptions, 'amount'> & { amount: number | bigint | 'max', requirementSignature?: RequirementSignature, slippageTolerance?: bigint }} MorphoRepayOptions
+ * @typedef {Object} MorphoErc20SupplyOptions
+ * @property {string} token - The ERC-20 token address to supply.
+ * @property {number | bigint} amount - The ERC-20 amount to supply, in base units.
+ * @property {number | bigint} [nativeAmount] - Optional native token amount to wrap and supply, in base units.
+ * @property {string} [onBehalfOf] - The address on behalf of which the supply operation should be performed. Must match the wallet account address when set.
+ * @property {RequirementSignature} [requirementSignature] - Signature returned by a Morpho SDK approval requirement.
+ * @property {bigint} [slippageTolerance] - Optional Morpho SDK slippage tolerance in WAD precision.
+ */
+
+/**
+ * @typedef {Object} MorphoNativeSupplyOptions
+ * @property {string} token - The wrapped-native token address expected by the configured vault or market.
+ * @property {number | bigint} [amount] - Optional ERC-20 amount to supply, in base units.
+ * @property {number | bigint} nativeAmount - The native token amount to wrap and supply, in base units.
+ * @property {string} [onBehalfOf] - The address on behalf of which the supply operation should be performed. Must match the wallet account address when set.
+ * @property {RequirementSignature} [requirementSignature] - Signature returned by a Morpho SDK approval requirement.
+ * @property {bigint} [slippageTolerance] - Optional Morpho SDK slippage tolerance in WAD precision.
+ */
+
+/** @typedef {MorphoErc20SupplyOptions | MorphoNativeSupplyOptions} MorphoSupplyOptions */
+
+/**
+ * @typedef {Object} MorphoBorrowOptions
+ * @property {string} token - The address of the token to borrow.
+ * @property {number | bigint} amount - The amount of tokens to borrow, in base units.
+ * @property {string} [onBehalfOf] - The address on behalf of which the borrow operation should be performed. Must match the wallet account address when set.
+ * @property {readonly VaultReallocation[]} [reallocations] - Optional Morpho Vault V2 reallocations to include in the borrow action.
+ * @property {bigint} [slippageTolerance] - Optional Morpho SDK slippage tolerance in WAD precision.
+ */
+
+/**
+ * @typedef {Object} MorphoRepayOptions
+ * @property {string} token - The address of the token to repay.
+ * @property {number | bigint | 'max'} amount - The repayment amount, in base units, or `max` to repay all current borrow shares.
+ * @property {string} [onBehalfOf] - The address on behalf of which the repay operation should be performed. Must match the wallet account address when set.
+ * @property {RequirementSignature} [requirementSignature] - Signature returned by a Morpho SDK approval requirement.
+ * @property {bigint} [slippageTolerance] - Optional Morpho SDK slippage tolerance in WAD precision.
+ */
+
+/**
+ * @typedef {Object} Presets
+ * @property {string} [earn] - Key of a curated Morpho Vault V2 preset in `MORPHO_VAULT_PRESETS`.
+ * @property {string} [borrow] - Key of a curated Morpho Blue market preset in `MORPHO_MARKET_PRESETS`.
  */
 
 /**
@@ -96,8 +139,8 @@ import { MORPHO_MARKET_PRESETS, MORPHO_VAULT_PRESETS } from './morpho-presets.js
  * @typedef {Object} MorphoProtocolOptions
  * @property {string} [earnVaultAddress] - Explicit Morpho vault address. Takes priority over `presets.earn`.
  * @property {string} [borrowMarketId] - Explicit market id. If `borrowMarketParams` is not provided, params are fetched on-chain.
- * @property {import('@morpho-org/blue-sdk').InputMarketParams} [borrowMarketParams] - Explicit Morpho Blue market params. Takes priority over `borrowMarketId` and `presets.borrow`.
- * @property {{ earn?: string, borrow?: string }} [presets] - Curated target names for Ethereum USDT earn/borrow.
+ * @property {InputMarketParams} [borrowMarketParams] - Explicit Morpho Blue market params. Takes priority over `borrowMarketId` and `presets.borrow`.
+ * @property {Presets} [presets] - Curated target names for Ethereum USDT earn/borrow.
  * @property {number | bigint} [chainId] - Required when explicit Morpho targets are used; guards against wallet chain switches.
  * @property {bigint} [slippageTolerance] - Optional Morpho SDK slippage tolerance in WAD precision.
  * @property {boolean} [supportSignature] - Enable Morpho SDK permit/permit2 requirements (default: false).
@@ -202,7 +245,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
   constructor (account, options = {}) {
     super(account)
 
-    const { provider } = account._config || {}
+    const { provider } = account._config
 
     if (!provider) {
       throw new Error('The wallet account must have a provider configured.')
@@ -241,9 +284,13 @@ export default class MorphoProtocolEvm extends LendingProtocol {
    * `getSupplyRequirements(options)` first if the account has not approved the
    * required Morpho bundler spender.
    *
+   * For direct ERC-20 approvals, use {@link WalletAccountEvm#approve} or
+   * {@link WalletAccountEvmErc4337#approve} before calling this method.
+   *
    * @param {MorphoSupplyOptions} options - The supply options.
    * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
    * @returns {Promise<SupplyResult>} The supply result.
+   * @throws {Error} If the options are invalid, the token does not match the configured vault, the account lacks funds, or the transaction fails.
    */
   async supply (options, config) {
     this._assertWritable('supply(options)')
@@ -320,6 +367,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
    * @param {WithdrawOptions} options - The withdraw options.
    * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
    * @returns {Promise<WithdrawResult>} The withdraw result.
+   * @throws {Error} If the options are invalid, the token does not match the configured vault, or the transaction fails.
    */
   async withdraw (options, config) {
     this._assertWritable('withdraw(options)')
@@ -372,9 +420,10 @@ export default class MorphoProtocolEvm extends LendingProtocol {
    * Use `getBorrowRequirements(options)` first if GeneralAdapter1 has not been
    * authorized on Morpho for this account.
    *
-   * @param {BorrowOptions & { reallocations?: readonly VaultReallocation[], slippageTolerance?: bigint }} options - The borrow options.
+   * @param {MorphoBorrowOptions} options - The borrow options.
    * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
    * @returns {Promise<BorrowResult>} The borrow result.
+   * @throws {Error} If the options are invalid, GeneralAdapter1 is not authorized, or the transaction fails.
    */
   async borrow (options, config) {
     this._assertWritable('borrow(options)')
@@ -387,7 +436,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
   /**
    * Returns Morpho SDK requirements for a borrow.
    *
-   * @param {BorrowOptions & { reallocations?: readonly VaultReallocation[], slippageTolerance?: bigint }} options - The borrow options.
+   * @param {MorphoBorrowOptions} options - The borrow options.
    * @returns {Promise<RequirementAuthorization[]>} Authorization requirements.
    */
   async getBorrowRequirements (options) {
@@ -399,7 +448,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
   /**
    * Quotes the cost of a borrow transaction.
    *
-   * @param {BorrowOptions & { reallocations?: readonly VaultReallocation[], slippageTolerance?: bigint }} options - The borrow options.
+   * @param {MorphoBorrowOptions} options - The borrow options.
    * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
    * @returns {Promise<Omit<BorrowResult, 'hash'>>} The fee quote.
    */
@@ -448,6 +497,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
    * @param {MorphoRepayOptions} options - The repay options.
    * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
    * @returns {Promise<RepayResult>} The repay result.
+   * @throws {Error} If the options are invalid, the account lacks funds, or the transaction fails.
    */
   async repay (options, config) {
     this._assertWritable('repay(options)')
@@ -523,9 +573,15 @@ export default class MorphoProtocolEvm extends LendingProtocol {
   /**
    * Supplies collateral to the configured Morpho Blue market.
    *
+   * Use `getSupplyCollateralRequirements(options)` first if the account has not approved the required Morpho bundler spender.
+   *
+   * For direct ERC-20 approvals, use {@link WalletAccountEvm#approve} or
+   * {@link WalletAccountEvmErc4337#approve} before calling this method.
+   *
    * @param {MorphoSupplyOptions} options - The collateral supply options.
    * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
    * @returns {Promise<SupplyResult>} The supply collateral result.
+   * @throws {Error} If the options are invalid, the token does not match the configured market collateral, the account lacks funds, or the transaction fails.
    */
   async supplyCollateral (options, config) {
     this._assertWritable('supplyCollateral(options)')
@@ -599,6 +655,7 @@ export default class MorphoProtocolEvm extends LendingProtocol {
    * @param {WithdrawOptions} options - The collateral withdraw options.
    * @param {Erc4337TransactionConfig} [config] - ERC-4337 transaction config override.
    * @returns {Promise<WithdrawResult>} The withdraw collateral result.
+   * @throws {Error} If the options are invalid, the token does not match the configured market collateral, or the transaction fails.
    */
   async withdrawCollateral (options, config) {
     this._assertWritable('withdrawCollateral(options)')

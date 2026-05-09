@@ -5,7 +5,7 @@ import { setTimeout as delay } from 'node:timers/promises'
 
 import { createPublicClient, createWalletClient, erc20Abi, http, parseUnits } from 'viem'
 import { WalletAccountEvm } from '@tetherto/wdk-wallet-evm'
-import MorphoProtocolEvm from '../index.js'
+import MorphoProtocolEvm from '../../index.js'
 
 const SEED = 'cook voyage document eight skate token alien guide drink uncle term abuse'
 const USDT = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
