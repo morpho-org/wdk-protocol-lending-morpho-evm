@@ -23,12 +23,12 @@
   "type": "module",
   "types": "./types",
   "scripts": {
-    "build": "npm run build:types",
+    "build": "pnpm run build:types",
     "build:types": "tsc",
     "check:vault-v2": "node scripts/check-vault-v2-only.js",
     "lint": "standard",
     "lint:fix": "standard --fix",
-    "pretest": "npm run check:vault-v2",
+    "pretest": "pnpm run check:vault-v2",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
     "test:fork": "cross-env NODE_OPTIONS=--experimental-vm-modules jest tests/integration/module.test.js",
     "test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage"
@@ -82,5 +82,9 @@
       "bare.js",
       "tests/**/*.js"
     ]
+  },
+  "packageManager": "pnpm@11.0.9",
+  "engines": {
+    "node": ">=22.13.0"
   }
 }
