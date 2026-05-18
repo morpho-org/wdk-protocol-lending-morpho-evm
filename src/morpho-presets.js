@@ -1,20 +1,20 @@
-// Copyright 2024 Tether Operations Limited
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 'use strict'
 
-/** @internal */
+/**
+ * @typedef {Object} Vault
+ * @property {string} address - The vault's address.
+ * @property {string} name - The vault's display name.
+ * @property {number} chainId - The identifier of the chain that hosts the vault.
+ */
+
+/**
+ * A map of curated Morpho Vault V2 presets.
+ *
+ * @readonly
+ * @type {Record<string, Vault>}
+ */
 export const MORPHO_VAULT_PRESETS = Object.freeze({
   'sky-money-usdt-savings': Object.freeze({
     address: '0x23f5E9c35820f4baB695Ac1F19c203cC3f8e1e11',
@@ -28,7 +28,20 @@ export const MORPHO_VAULT_PRESETS = Object.freeze({
   })
 })
 
-/** @internal */
+/**
+ * @typedef {Object} Market
+ * @property {string} marketId - The Morpho Blue market identifier.
+ * @property {string} collateralSymbol - The symbol of the market collateral token.
+ * @property {string} lltv - The loan-to-value ratio.
+ * @property {number} chainId - The identifier of the chain that hosts the market.
+ */
+
+/**
+ * A map of curated Morpho Blue market presets.
+ *
+ * @readonly
+ * @type {Record<string, Market>}
+ */
 export const MORPHO_MARKET_PRESETS = Object.freeze({
   susds: Object.freeze({
     marketId: '0x3274643db77a064abd3bc851de77556a4ad2e2f502f4f0c80845fa8f909ecf0b',

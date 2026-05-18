@@ -1,16 +1,4 @@
-// Copyright 2024 Tether Operations Limited
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 'use strict'
 
@@ -25,10 +13,29 @@
 /** @typedef {import('@tetherto/wdk-wallet/protocols').RepayOptions} RepayOptions */
 /** @typedef {import('@tetherto/wdk-wallet/protocols').RepayResult} RepayResult */
 
+/** @typedef {import('@morpho-org/blue-sdk').InputMarketParams} InputMarketParams */
+
+/** @typedef {import('./src/morpho-presets.js').Vault} Vault */
+/** @typedef {import('./src/morpho-presets.js').Market} Market */
+
 /** @typedef {import('./src/morpho-protocol-evm.js').AccountData} AccountData */
 /** @typedef {import('./src/morpho-protocol-evm.js').VaultPosition} VaultPosition */
 /** @typedef {import('./src/morpho-protocol-evm.js').MarketPosition} MarketPosition */
 /** @typedef {import('./src/morpho-protocol-evm.js').MorphoProtocolOptions} MorphoProtocolOptions */
+/** @typedef {import('./src/morpho-protocol-evm.js').Presets} Presets */
+/** @typedef {import('./src/morpho-protocol-evm.js').MorphoErc20SupplyOptions} MorphoErc20SupplyOptions */
+/** @typedef {import('./src/morpho-protocol-evm.js').MorphoNativeSupplyOptions} MorphoNativeSupplyOptions */
+/** @typedef {import('./src/morpho-protocol-evm.js').MorphoSupplyOptions} MorphoSupplyOptions */
+/** @typedef {import('./src/morpho-protocol-evm.js').MorphoBorrowOptions} MorphoBorrowOptions */
+/** @typedef {import('./src/morpho-protocol-evm.js').MorphoRepayOptions} MorphoRepayOptions */
+/** @typedef {import('./src/morpho-protocol-evm.js').RequirementOptions} RequirementOptions */
+/** @typedef {import('./src/morpho-protocol-evm.js').ApprovalOrSignatureRequirement} ApprovalOrSignatureRequirement */
+/** @typedef {import('./src/morpho-protocol-evm.js').RequirementApproval} RequirementApproval */
+/** @typedef {import('./src/morpho-protocol-evm.js').RequirementAuthorization} RequirementAuthorization */
+/** @typedef {import('./src/morpho-protocol-evm.js').RequirementSignatureRequest} RequirementSignatureRequest */
+/** @typedef {import('./src/morpho-protocol-evm.js').RequirementSignature} RequirementSignature */
+/** @typedef {import('./src/morpho-protocol-evm.js').VaultReallocation} VaultReallocation */
+/** @typedef {import('./src/morpho-protocol-evm.js').Erc4337TransactionConfig} Erc4337TransactionConfig */
 
 export { default } from './src/morpho-protocol-evm.js'
 

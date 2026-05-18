@@ -1,6 +1,4 @@
-# wdk-protocol-lending-morpho-evm
-
-[![Powered by WDK](https://img.shields.io/badge/Powered%20by-WDK-00A478?style=flat-square)](https://docs.wallet.tether.io)
+# @morpho-org/wdk-protocol-lending-morpho-evm
 
 Note: This package is in beta. Please test in a dev setup first.
 
@@ -8,7 +6,7 @@ A WDK lending module for Morpho on EVM chains. It keeps the same package shape a
 
 ## About WDK
 
-This is part of WDK (Wallet Development Kit). WDK helps you build safe, non-custody wallets. Read more at https://docs.wallet.tether.io.
+This module follows Wallet Development Kit lending protocol conventions and accepts WDK-compatible EVM wallet accounts.
 
 ## Features
 
@@ -23,19 +21,15 @@ This is part of WDK (Wallet Development Kit). WDK helps you build safe, non-cust
 ## Installation
 
 ```bash
-npm install @tetherto/wdk-protocol-lending-morpho-evm
+npm install @morpho-org/wdk-protocol-lending-morpho-evm
 ```
 
 ## Quick Start
 
 ```javascript
-import MorphoProtocolEvm from '@tetherto/wdk-protocol-lending-morpho-evm'
-import { WalletAccountEvm } from '@tetherto/wdk-wallet-evm'
+import MorphoProtocolEvm from '@morpho-org/wdk-protocol-lending-morpho-evm'
 
-const account = new WalletAccountEvm(seed, "0'/0/0", {
-  provider: 'https://ethereum-rpc.publicnode.com'
-})
-
+// Use any WDK-compatible EVM wallet account instance.
 const morpho = new MorphoProtocolEvm(account, {
   presets: {
     earn: 'sky-money-usdt-savings',
