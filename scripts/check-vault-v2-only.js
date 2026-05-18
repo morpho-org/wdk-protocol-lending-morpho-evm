@@ -1,20 +1,8 @@
-// Copyright 2024 Tether Operations Limited
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 'use strict'
 
-import { readFile } from 'node:fs/promises'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -31,6 +19,14 @@ const checks = [
   },
   {
     file: 'tests/morpho-protocol-evm.test.js',
+    patterns: [
+      'vaultV1',
+      'earnVaultVersion',
+      'vaultVersion'
+    ]
+  },
+  {
+    file: 'tests/integration/module.test.js',
     patterns: [
       'vaultV1',
       'earnVaultVersion',
@@ -57,11 +53,12 @@ const checks = [
 ]
 
 for (const check of checks) {
-  const content = await readFile(join(root, check.file), 'utf8')
+  const content = readFileSync(join(root, check.file), 'utf8')
   const pattern = check.patterns.find((pattern) => content.includes(pattern))
 
   if (pattern) {
-    throw new Error(`${check.file} contains unsupported Morpho vault reference '${pattern}'. Use Morpho Vault V2 only.`)
+    console.error(`${check.file} contains unsupported Morpho vault reference '${pattern}'. Use Morpho Vault V2 only.`)
+    process.exit(1)
   }
 }
 
