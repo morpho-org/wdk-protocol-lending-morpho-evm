@@ -20,8 +20,23 @@ This module follows Wallet Development Kit lending protocol conventions and acce
 
 ## Installation
 
+This package is not published to npm yet. For local development, install dependencies from the repository root with pnpm:
+
 ```bash
-npm install @morpho-org/wdk-protocol-lending-morpho-evm
+pnpm install
+```
+
+Once npm publishing is configured, consumers should install the package with:
+
+```bash
+pnpm add @morpho-org/wdk-protocol-lending-morpho-evm
+```
+
+Useful local commands:
+
+```bash
+pnpm test
+pnpm run build
 ```
 
 ## Quick Start
@@ -104,7 +119,7 @@ Earn presets target Ethereum mainnet USDT vaults:
 | `sky-money-usdt-savings` | sky.money USDT Savings V2 |
 | `steakhouse-prime-instant` | Steakhouse Prime Instant V2 |
 
-This module only builds Morpho Vault V2 earn flows. `npm run check:vault-v2` verifies that code, docs, and tests do not reintroduce Morpho Vault V1 usage or an earn-flow selector.
+This module only builds Morpho Vault V2 earn flows. `pnpm run check:vault-v2` verifies that code, docs, and tests do not reintroduce Morpho Vault V1 usage or an earn-flow selector.
 
 Borrow presets target Ethereum mainnet USDT loan markets:
 
@@ -134,7 +149,7 @@ Morpho SDK enforces a builder/executor invariant for bundled actions. For that r
 The regular test suite is fully mocked. To execute a real vault deposit path on an Anvil mainnet fork:
 
 ```bash
-MAINNET_RPC_URL="https://eth-mainnet.g.alchemy.com/v2/<key>" npm run test:fork -- --runInBand
+MAINNET_RPC_URL="https://eth-mainnet.g.alchemy.com/v2/<key>" pnpm run test:fork -- --runInBand
 ```
 
 The fork test impersonates a USDT holder, funds the local test wallet, sends SDK requirements, and executes a Morpho Vault V2 deposit against forked mainnet state.
