@@ -1,5 +1,5 @@
 {
-  "name": "@tetherto/wdk-protocol-lending-morpho-evm",
+  "name": "@morpho-org/wdk-protocol-lending-morpho-evm",
   "version": "1.0.0-beta.1",
   "description": "A WDK lending module that lets EVM wallet accounts interact with Morpho vaults and markets through @morpho-org/morpho-sdk.",
   "keywords": [
@@ -13,11 +13,11 @@
     "ethereum",
     "erc-4337"
   ],
-  "author": "Tether",
+  "author": "Morpho Labs",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git://github.com/tetherto/wdk-protocol-lending-morpho-evm.git"
+    "url": "git://github.com/morpho-org/wdk-protocol-lending-morpho-evm.git"
   },
   "main": "index.js",
   "type": "module",
